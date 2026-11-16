@@ -1,0 +1,20 @@
+{
+  "name": "lucky-five",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Lucky Five: pick the colour group of the next rolling ball. Demo-money browser game prototype.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:single": "npm run build && node scripts/single-file.mjs"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^3.2.4"
+  }
+}

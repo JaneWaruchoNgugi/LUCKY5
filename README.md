@@ -20,14 +20,40 @@ Multiplier odds: 1.55× 40%, 3.2× 25%, 5× 15%, 8× 10%, 12× 6%, 25× 3%, 50×
 - Manual and Auto betting (10 / 25 / 50 / 100 rounds).
 - Bet input with − / + and quick amounts (20, 50, 100, 500, 1K).
 - Canvas-drawn rail with a row of previous results, plus a round log.
+- Sounds made with the Web Audio API (no audio files), with a settings menu: on/off, volume, and separate switches for rolling ticks, countdown beeps, win/loss sounds and button clicks.
+- A 7-step How to play tour that opens on the first visit and again from the **?** button.
+- Keyboard: B, I, N, G, O pick a group; Space places or cancels a bet in Manual.
 - Results come from HMAC-SHA256(server seed, "client seed:nonce") via the Web Crypto API.
+
+## Tech
+
+TypeScript (strict) built with Vite. Tests use Vitest.
+
+```
+src/
+  main.ts            start-up: game, sound settings, tour steps
+  game.ts            round clock, bets, bet panel and round log
+  rail.ts            canvas renderer for the balls and the "Previous" row
+  fair.ts            seeded results, multiplier table, PRNG for the decoy balls
+  sound.ts           Web Audio sound effects
+  sound-settings.ts  the sound settings menu
+  tour.ts            How to play overlay
+  state.ts           saved balance and history (localStorage)
+  format.ts          group names, number formatting
+  types.ts           shared types
+  style.css
+tests/fair.test.ts   odds, determinism and helpers
+```
 
 ## Run it
 
-It is a single self-contained file. Open `index.html` in a browser, or serve the folder:
-
 ```
-python3 -m http.server 8000
+npm install
+npm run dev          # local dev server
+npm run typecheck
+npm test
+npm run build        # production build in dist/
+npm run build:single # also writes dist/lucky-five.html, one self-contained file
 ```
 
 ## Note
