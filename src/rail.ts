@@ -414,23 +414,63 @@ export class Rail {
     ctx.fillText(String(b.ball), 0, r * 0.14);
     ctx.restore();
 
-    // Multiplier tag under the ball.
-    const tc = TIER_COLOR[tier(b.mult)];
-    const txt = `${fmtM(b.mult)}×`;
-    ctx.font = `700 ${r < 34 ? 12 : 14}px "JetBrains Mono", ui-monospace, monospace`;
-    const tw = ctx.measureText(txt).width + 18;
-    const th = r < 34 ? 21 : 24;
+    // Multiplier tag under the ball: dark glass capsule, number in its tier colour.
+    const tr = tier(b.mult);
+    const tc = TIER_COLOR[tr];
+    const big = tr === 't3' || tr === 't4' || tr === 't5';
+    const num = fmtM(b.mult);
+    const small = r < 34;
+    const fNum = `700 ${small ? 12 : 14}px "JetBrains Mono", ui-monospace, monospace`;
+    const fX = `700 ${small ? 9 : 10}px "JetBrains Mono", ui-monospace, monospace`;
+    ctx.font = fNum;
+    const nw = ctx.measureText(num).width;
+    ctx.font = fX;
+    const xw = ctx.measureText('×').width;
+    const tw = nw + xw + 1 + (small ? 20 : 24);
+    const th = small ? 21 : 24;
+    const tx = cx - tw / 2;
     const ty = cy + r * (hit ? HIT_SCALE : 1) + 9;
-    this.pill(cx - tw / 2, ty, tw, th);
-    ctx.fillStyle = alpha(tc, hit ? 0.45 : 0.22);
+    ctx.save();
+    this.pill(tx, ty, tw, th);
+    if (hit) {
+      const fill = ctx.createLinearGradient(0, ty, 0, ty + th);
+      fill.addColorStop(0, mix(tc, '#ffffff', 0.35));
+      fill.addColorStop(1, tc);
+      ctx.fillStyle = fill;
+      ctx.shadowColor = tc;
+      ctx.shadowBlur = 16;
+    } else {
+      const fill = ctx.createLinearGradient(0, ty, 0, ty + th);
+      fill.addColorStop(0, 'rgba(30,52,52,.92)');
+      fill.addColorStop(1, 'rgba(6,16,16,.92)');
+      ctx.fillStyle = fill;
+      if (big) {
+        ctx.shadowColor = alpha(tc, 0.7);
+        ctx.shadowBlur = 10;
+      }
+    }
     ctx.fill();
-    ctx.strokeStyle = alpha(tc, 0.7);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     ctx.lineWidth = 1;
+    ctx.strokeStyle = hit ? alpha('#ffffff', 0.55) : alpha(tc, big ? 0.85 : 0.45);
     ctx.stroke();
-    ctx.fillStyle = mix(tc, '#ffffff', 0.6);
-    ctx.textAlign = 'center';
+    // Top sheen.
+    ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
+    ctx.fillRect(tx, ty, tw, th / 2);
+    ctx.restore();
+    const ink = hit ? '#0b1414' : big ? tc : mix(tc, '#ffffff', 0.45);
+    const sx = cx - (nw + 1 + xw) / 2;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(txt, cx, ty + th / 2 + 1);
+    ctx.fillStyle = ink;
+    ctx.font = fNum;
+    ctx.fillText(num, sx, ty + th / 2 + 1);
+    ctx.globalAlpha = 0.75;
+    ctx.font = fX;
+    ctx.fillText('×', sx + nw + 1, ty + th / 2 + 1.5);
+    ctx.globalAlpha = 1;
   }
 
   private drawHistory(g: Geometry): void {
