@@ -1,9 +1,22 @@
 import './style.css';
-import { byId, one } from './dom';
+import { all, byId, one } from './dom';
+import { MAX_MULTIPLIER, MULTIPLIER_TABLE } from './fair';
 import { Game } from './game';
 import { Sound } from './sound';
 import { mountSoundSettings } from './sound-settings';
 import { Tour, type TourStep } from './tour';
+
+// Show the multipliers a matching ball can carry on every colour pick.
+const MIN_MULTIPLIER = Math.min(...MULTIPLIER_TABLE.map(([m]) => m));
+const odds = MULTIPLIER_TABLE.map(([m, c]) => `${m}× (${Math.round(c * 100)}%)`).join(', ');
+for (const pk of all<HTMLButtonElement>('.pk')) {
+  const tag = document.createElement('span');
+  tag.className = 'pm';
+  tag.textContent = `${MIN_MULTIPLIER}–${MAX_MULTIPLIER}×`;
+  pk.append(tag);
+  pk.title = `Wins pay your bet × the ball's multiplier: ${odds}`;
+  pk.setAttribute('aria-label', `${pk.getAttribute('aria-label') ?? ''}, pays ${MIN_MULTIPLIER} to ${MAX_MULTIPLIER} times`);
+}
 
 const sound = new Sound();
 const game = new Game(sound);

@@ -278,3 +278,12 @@ header{min-width:0}
   .logo em{margin-left:.15em}
 }
 .pop-row.col{grid-template-columns:minmax(0,1fr)} .pop input[type="range"]{width:100%; margin:0}
+
+/* Multiplier range under each colour pick */
+.pk{grid-auto-flow:row; row-gap:6px; padding-bottom:7px}
+.pk .pm{font:700 11px/1 "Space Grotesk", system-ui, sans-serif; letter-spacing:.02em; color:#fff;
+  padding:3px 6px; border-radius:999px; background:rgba(0,0,0,.32); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c) 55%, transparent);
+  white-space:nowrap}
+.pk[aria-checked="true"] .pm{background:var(--c); color:#0b1414; box-shadow:none}
+.pk[data-p="B"][aria-checked="true"] .pm, .pk[data-p="I"][aria-checked="true"] .pm{color:#fff}
+@media (max-width:420px){ .pk .pm{font-size:9.5px; padding:3px 4px} }

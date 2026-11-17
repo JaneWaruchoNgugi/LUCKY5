@@ -1,5 +1,5 @@
 import { all, byId, one, prefersReducedMotion, sleep } from './dom';
-import { MAX_MULTIPLIER, mulberry32, roll } from './fair';
+import { MAX_MULTIPLIER, roll } from './fair';
 import { GROUP_NAME, fmt, fmtM, isLetter, letterOf, money } from './format';
 import { C, GROUP_COLOR, LAND, Rail, START } from './rail';
 import type { Sound } from './sound';
@@ -8,7 +8,7 @@ import type { Bet, GameState, Letter, Mode, Phase } from './types';
 
 /** How long each part of a round lasts, in ms. */
 const BET_WINDOW_MS = 5000;
-const SLIDE_MS = 3000;
+const SLIDE_MS = 4000;
 const RESULT_HOLD_MS = 2000;
 
 /**
@@ -111,8 +111,7 @@ export class Game {
     s.nonce++;
     this.rail.build(res.seed, s.last, { mult: res.mult, ball: res.ball });
     const from = this.rail.offsetFor(START);
-    const jitter = ((mulberry32(res.seed ^ 0x9e3779b9)() - 0.5) * 0.7);
-    const to = this.rail.offsetFor(LAND, jitter);
+    const to = this.rail.offsetFor(LAND);
     this.rail.setMarker(C.brass);
     this.setPhaseBar('Rolling', 0, 'roll');
     const live = this.live;

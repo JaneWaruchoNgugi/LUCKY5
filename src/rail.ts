@@ -31,7 +31,38 @@ const alpha = (hex: string, a: number): string => {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 };
-const ease = (t: number): number => 1 - Math.pow(1 - t, 4.2);
+/** CSS-style cubic-bezier easing (x1, y1, x2, y2), solved with Newton steps plus bisection. */
+const bezier = (x1: number, y1: number, x2: number, y2: number) => {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const sx = (u: number) => ((ax * u + bx) * u + cx) * u;
+  const sy = (u: number) => ((ay * u + by) * u + cy) * u;
+  const dx = (u: number) => (3 * ax * u + 2 * bx) * u + cx;
+  return (t: number): number => {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    let u = t;
+    for (let i = 0; i < 6; i++) {
+      const e = sx(u) - t;
+      const d = dx(u);
+      if (Math.abs(e) < 1e-6) return sy(u);
+      if (Math.abs(d) < 1e-6) break;
+      u -= e / d;
+    }
+    let lo = 0, hi = 1;
+    u = t;
+    for (let i = 0; i < 30; i++) {
+      const e = sx(u) - t;
+      if (Math.abs(e) < 1e-6) break;
+      if (e > 0) hi = u;
+      else lo = u;
+      u = (lo + hi) / 2;
+    }
+    return sy(u);
+  };
+};
+/** Starts from rest, picks up speed, then coasts down to a stop like a rolling ball. */
+const ease = bezier(0.3, 0.05, 0.08, 1);
 /** Gentle overshoot used when the landed ball settles into the centre window. */
 const easeBack = (t: number): number => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2);
 const HIT_SCALE = 1.1;
@@ -50,6 +81,8 @@ export class Rail {
   private readonly ctx: CanvasRenderingContext2D;
   private balls: Ball[] = [];
   private x = 0;
+  /** Where the strip will come to rest; the ball faces are upright there. */
+  private restX = 0;
   private hit = -1;
   private hitColor: string = C.brass;
   private marker: string = C.brass;
@@ -87,10 +120,10 @@ export class Rail {
     this.resize();
     if (!this.balls.length) {
       this.build(last ? last.seed : 12345, last, null);
-      this.x = this.offsetFor(START);
+      this.x = this.restX = this.offsetFor(START);
       this.hit = last ? START : -1;
     } else {
-      this.x = this.offsetFor(this.hit >= 0 ? this.hit : START);
+      this.x = this.restX = this.offsetFor(this.hit >= 0 ? this.hit : START);
     }
     this.draw();
   }
@@ -140,6 +173,7 @@ export class Rail {
         else done();
       };
       this.x = from;
+      this.restX = to;
       requestAnimationFrame(step);
     });
   }
@@ -162,7 +196,7 @@ export class Rail {
     this.balls.forEach((b, i) => {
       const cx = this.x + i * pitch + g.bw / 2;
       if (cx < -g.bw || cx > this.W + g.bw) return;
-      this.drawBall(b, cx, cy, g.r, i === this.hit);
+      this.drawBall(b, cx, cy, g.r, i === this.hit, (this.x - this.restX) / g.r);
     });
 
     // Fade the strip out at both edges.
@@ -333,7 +367,7 @@ export class Rail {
     ctx.closePath();
   }
 
-  private drawBall(b: Ball, cx: number, cy: number, r: number, hit: boolean): void {
+  private drawBall(b: Ball, cx: number, cy: number, r: number, hit: boolean, spin = 0): void {
     const { ctx } = this;
     const L = letterOf(b.ball);
     const c = GROUP_COLOR[L];
@@ -364,6 +398,8 @@ export class Rail {
       ctx.arc(0, 0, r + 3, 0, Math.PI * 2);
       ctx.stroke();
     }
+    // The face turns as the ball rolls; shading and gloss stay put so it reads as a sphere.
+    ctx.rotate(spin);
     ctx.fillStyle = '#fbfbf6';
     ctx.beginPath();
     ctx.arc(0, 0, r * 0.64, 0, Math.PI * 2);
