@@ -55,7 +55,7 @@ const steps: TourStep[] = [
   {
     target: () => byId('play'),
     title: 'Place your bet',
-    text: 'Your bet joins the next ball. If that ball is your colour, you win your bet × its multiplier. You can cancel until the ball starts rolling.',
+    text: 'Your bet joins the next ball. If that ball is your colour, you win your bet × its multiplier. The button stays locked until that ball has landed.',
   },
   {
     target: () => one('.tabs'),

@@ -425,3 +425,10 @@ header{min-width:0}
 }
 @media (min-width:1500px){ .deck .pk b{width:54px; height:54px; font-size:20px} .deck .pk .pm{font-size:11px; padding:3px 6px} }
 @media (min-width:1100px) and (max-width:1499px){ .deck .picks{gap:6px} .deck .pk .pm{font-size:9.5px; padding:3px 4px; letter-spacing:0} .deck .pk b{width:44px; height:44px} }
+
+/* Bet placed: button locked until the round ends */
+.play.placed, .play.placed:disabled{opacity:1; cursor:default; transform:none; filter:none;
+  background:linear-gradient(180deg, rgba(61,220,132,.22), rgba(61,220,132,.08)); color:var(--win);
+  box-shadow:inset 0 0 0 1.5px rgba(61,220,132,.6), 0 5px 0 var(--rail)}
+.play.placed .pl-main::before{content:"✓ "}
+.play.placed .pl-sub{color:#cfe3dd}

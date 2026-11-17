@@ -236,8 +236,8 @@ export class Game {
         this.autoLeft = Math.max(1, Math.min(1000, parseInt(this.el.rounds.value, 10) || 0));
         if (this.phase === 'betting' && !this.queued && !this.placeBet()) this.autoLeft = 0;
       }
-    } else if (this.queued) {
-      this.cancelBet();
+    } else if (this.queued || this.live) {
+      return; // locked until the round ends
     } else {
       this.placeBet();
     }
@@ -345,7 +345,8 @@ export class Game {
     const { bet } = this.readBet();
     const sub = bet > 0 ? `${this.pick} · win up to KES ${fmt(bet * MAX_MULTIPLIER)}` : 'Set a bet';
     const when = this.phase === 'betting' ? 'this ball' : 'the next ball';
-    play.classList.remove('stop', 'queued');
+    play.classList.remove('stop', 'queued', 'placed');
+    play.disabled = false;
     if (this.mode === 'auto') {
       if (this.autoLeft > 0) {
         playMain.textContent = 'Stop auto';
@@ -355,10 +356,13 @@ export class Game {
         playMain.textContent = 'Start auto';
         playSub.textContent = `${sub} · ${parseInt(this.el.rounds.value, 10) || 0} rounds`;
       }
-    } else if (this.queued) {
-      playMain.textContent = 'Cancel bet';
-      playSub.textContent = `KES ${fmt(this.queued.bet)} on ${this.queued.pick} · ${when}`;
-      play.classList.add('queued');
+    } else if (this.queued || this.live) {
+      // A bet is in: lock the button until its round has a result.
+      const b = (this.queued ?? this.live)!;
+      playMain.textContent = this.live ? 'Rolling…' : 'Bet placed';
+      playSub.textContent = `KES ${fmt(b.bet)} on ${b.pick} · ${this.live ? 'good luck' : when}`;
+      play.classList.add('placed');
+      play.disabled = true;
     } else {
       playMain.textContent = 'Place bet';
       playSub.textContent = sub;
