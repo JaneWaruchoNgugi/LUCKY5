@@ -105,6 +105,8 @@ export class Rail {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not available');
     this.ctx = ctx;
+    // Redraw whenever the canvas changes size (e.g. it was 0 wide while the page was loading).
+    if ('ResizeObserver' in window) new ResizeObserver(() => this.draw()).observe(canvas);
   }
 
   geo(): Geometry {
@@ -115,7 +117,12 @@ export class Rail {
 
   private resize(): void {
     const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const oldW = this.W;
     this.W = this.canvas.clientWidth;
+    // Keep the strip centred on the same ball when the width changes.
+    const shift = (this.W - oldW) / 2;
+    this.x += shift;
+    this.restX += shift;
     const g = this.geo();
     this.H = g.hist + g.railH;
     this.canvas.style.height = `${this.H}px`;
@@ -254,6 +261,8 @@ export class Rail {
   }
 
   draw(): void {
+    // Self-heal if the canvas was measured while hidden or the layout changed size.
+    if (this.canvas.clientWidth !== this.W) this.resize();
     if (!this.W) return;
     const { ctx } = this;
     const g = this.geo();
