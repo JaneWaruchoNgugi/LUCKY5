@@ -4,7 +4,7 @@
 :root{
   --felt:#0c2a2b; --felt-2:#11393a; --panel:#0a2324; --rail:#071a1b; --line:#1e4a49;
   --chalk:#eaf4ee; --muted:#8fb3ab; --brass:#ffcf3d; --win:#3ddc84; --miss:#ff6b5e;
-  --b:#2f7dff; --i:#ff4d5e; --n:#cfd8d6; --g:#22c070; --o:#ffa928;
+  --b:#4a5cff; --i:#ff2d6f; --n:#cfd8d6; --g:#1fd16a; --o:#ff9418;
   --t1:#5e7f7b; --t2:#3e8bff; --t3:#22c070; --t4:#ffb22e; --t5:#ff4fd2;
   --font-display:'Bungee', 'Arial Black', Impact, sans-serif;
   --font-body:'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -87,7 +87,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--brass); outlin
     grid-template-areas:"tabs target play" "bet target play" "auto target play" "err err err"; align-items:start}
   .deck .tabs{grid-area:tabs} .deck .f-bet{grid-area:bet} .deck .f-target{grid-area:target} .deck #autoBox{grid-area:auto}
   .deck .play{grid-area:play; align-self:stretch; align-content:center}
-  .panel.deck .f-target{align-self:center} .deck .pk{padding:14px 0} .deck .pk b{width:52px; height:52px; font-size:20px} .deck .err{grid-area:err; margin:0}
+  .panel.deck .f-target{align-self:center} .deck .pk{padding:12px 0} .deck .pk b{width:60px; height:60px; font-size:21px} .deck .err{grid-area:err; margin:0}
   .deck .f-target{align-self:stretch; align-content:start}
 }
 .tag-play,.bal{white-space:nowrap}
@@ -101,9 +101,6 @@ table{min-width:520px}
 .amts button, .seg-full button{height:34px; border-radius:9px; background:var(--felt-2); font-family:var(--font-mono); font-weight:600; font-size:13px; color:var(--chalk)}
 .amts button.on, .seg-full button.on{background:var(--brass); color:#1b1600}
 .seg-full{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px}
-.pk{padding:7px 0}
-.pk b{width:40px; height:40px}
-.pk[aria-checked="true"]{transform:none}
 .f-target{align-content:center}
 .hdr-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .tools{display:flex; gap:8px}
@@ -169,14 +166,30 @@ table{min-width:520px}
 .chips button{padding:5px 0; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-family:var(--font-mono); font-size:12px; font-weight:600}
 .chips button:hover{color:var(--chalk); border-color:var(--muted)}
 .chips button.on{color:#1b1600; background:var(--brass); border-color:var(--brass)}
-.picks{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px}
-.pk{--c:var(--b); display:grid; justify-items:center; gap:2px; padding:10px 4px 9px; border-radius:12px; background:color-mix(in srgb, var(--c) 12%, var(--rail)); border:2px solid color-mix(in srgb, var(--c) 35%, transparent); transition:transform .12s, background .15s, border-color .15s}
-.pk b{display:grid; place-items:center; width:38px; height:38px; border-radius:50%; font-family:var(--font-display); font-weight:400; font-size:17px; color:#152020; background:radial-gradient(circle at 35% 30%, #fff 0 22%, color-mix(in srgb, var(--c) 30%, #fff) 23% 42%, var(--c) 43%)}
-.pk span{font-weight:700; font-size:13px}
-.pk small{font-family:var(--font-mono); font-size:11px; color:var(--muted)}
-.pk:hover{border-color:color-mix(in srgb, var(--c) 70%, transparent)}
-.pk[aria-checked="true"]{background:color-mix(in srgb, var(--c) 30%, var(--rail)); border-color:var(--c); transform:translateY(-2px); box-shadow:0 6px 18px color-mix(in srgb, var(--c) 30%, transparent)}
-.pk[data-p="B"]{--c:var(--b)} .pk[data-p="I"]{--c:var(--i)} .pk[data-p="N"]{--c:#8a9896} .pk[data-p="G"]{--c:var(--g)} .pk[data-p="O"]{--c:var(--o)}
+.picks{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:10px}
+/* Group picks: glossy bingo balls on tinted tiles */
+.pk{--c:#4a5cff; position:relative; display:grid; place-items:center; padding:10px 0; border-radius:14px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 34%, #061414), color-mix(in srgb, var(--c) 16%, #061414));
+  border:1.5px solid color-mix(in srgb, var(--c) 55%, transparent);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--c) 30%, transparent);
+  transition:filter .15s, transform .12s, box-shadow .2s, border-color .15s}
+.pk:hover{filter:brightness(1.12)}
+.pk:active{transform:scale(.96)}
+.pk b{position:relative; isolation:isolate; display:grid; place-items:center; width:46px; height:46px; border-radius:50%;
+  font-family:var(--font-display); font-weight:400; font-size:17px; line-height:1; color:#141a24;
+  background:
+    radial-gradient(circle at 50% 108%, color-mix(in srgb, var(--c) 60%, #fff) 0 12%, transparent 36%),
+    radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--c) 35%, #fff) 0 6%, var(--c) 34%, color-mix(in srgb, var(--c) 55%, #000) 100%);
+  box-shadow:0 6px 12px rgba(0,0,0,.45), inset 0 -4px 8px rgba(0,0,0,.25)}
+.pk b::before{content:""; position:absolute; inset:21%; border-radius:50%; z-index:-1;
+  background:radial-gradient(circle at 40% 35%, #fff 0 55%, #e6e9ee 100%); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.pk b::after{content:""; position:absolute; top:7%; left:17%; width:38%; height:24%; border-radius:50%; transform:rotate(-24deg);
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.95), rgba(255,255,255,0) 70%); pointer-events:none}
+.pk[aria-checked="true"]{border-color:var(--c); border-width:2px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 50%, #061414), color-mix(in srgb, var(--c) 24%, #061414));
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent), 0 8px 22px color-mix(in srgb, var(--c) 40%, transparent)}
+.pk[data-p="B"]{--c:#4a5cff} .pk[data-p="I"]{--c:#ff2d6f} .pk[data-p="N"]{--c:#aab4b7} .pk[data-p="G"]{--c:#1fd16a} .pk[data-p="O"]{--c:#ff9418}
+@media (max-width:420px){ .picks{gap:7px} .pk b{width:42px; height:42px; font-size:16px} }
 .lbl-strong{font-weight:700; color:var(--chalk); font-size:13px}
 .meter{height:6px; border-radius:999px; background:color-mix(in srgb, var(--miss) 30%, var(--rail)); overflow:hidden}
 .meter span{display:block; height:100%; width:49.5%; background:linear-gradient(90deg, var(--win), color-mix(in srgb, var(--win) 70%, var(--brass))); border-radius:inherit; transition:width .25s}

@@ -4,7 +4,7 @@ import type { Sound } from './sound';
 import type { Ball, HistoryEntry, LastBall, Letter } from './types';
 
 /** Colours of the five groups. */
-export const GROUP_COLOR: Record<Letter, string> = { B: '#2f7dff', I: '#ff4d5e', N: '#8a9896', G: '#22c070', O: '#ffa928' };
+export const GROUP_COLOR: Record<Letter, string> = { B: '#4a5cff', I: '#ff2d6f', N: '#8a9896', G: '#1fd16a', O: '#ff9418' };
 const TIER_COLOR: Record<Tier, string> = { t1: '#6f8f8a', t2: '#a9c4bd', t3: '#ffcf3d', t4: '#ff9f2e', t5: '#ff4fd2' };
 export const C = {
   rail: '#071a1b',
