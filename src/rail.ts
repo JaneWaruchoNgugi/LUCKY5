@@ -100,6 +100,7 @@ export class Rail {
   }
 
   geo(): Geometry {
+    if (this.W >= 900) return { bw: 112, gap: 18, r: 48, hist: 52, railH: 214 };
     const small = this.W < 560;
     return { bw: small ? 70 : 92, gap: small ? 10 : 14, r: small ? 31 : 40, hist: small ? 42 : 46, railH: small ? 150 : 178 };
   }

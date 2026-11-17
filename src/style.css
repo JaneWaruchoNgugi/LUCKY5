@@ -364,3 +364,54 @@ header{min-width:0}
 .rcard.lose{background:linear-gradient(135deg, rgba(255,107,94,.3), rgba(255,107,94,.1)), #071413}
 /* Payout float sits beside the wallet so the result banner never covers it */
 .wdelta{top:50%; right:calc(100% + 8px); margin-top:-12px}
+
+/* ---------- Pick tile extras (desktop only) ---------- */
+.pk-info{display:none}
+
+/* ---------- Colour trends panel ---------- */
+.trends .tr-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px}
+.trends h2{margin:0}
+.tr-you{display:flex; gap:14px; font-size:12.5px; color:var(--muted)} .tr-you b{color:#e8f2ef; font-family:var(--font-mono)}
+.tr-you b.w{color:var(--win)} .tr-you b.l{color:var(--miss)}
+.tr-rows{display:grid; gap:8px}
+.tr-row{display:grid; grid-template-columns:28px 92px minmax(0,1fr) 44px 112px; align-items:center; gap:12px; font-size:13px}
+.tr-ball{display:grid; place-items:center; width:28px; height:28px; border-radius:50%; font-family:var(--font-display); font-size:12px; color:#152020;
+  background:radial-gradient(circle, #fbfbf6 0 52%, transparent 54%), radial-gradient(circle at 35% 30%, #fff9, var(--c) 55%, #0007)}
+.tr-name{display:flex; align-items:center; gap:6px; font-weight:600}
+.tr-name .hot{font-style:normal; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#0b1414; background:var(--brass); padding:2px 6px; border-radius:999px}
+.tr-bar{height:8px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden}
+.tr-bar i{display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, transparent), var(--c)); transition:width .5s}
+.tr-pct{font-family:var(--font-mono); text-align:right}
+.tr-ago{color:var(--muted); font-size:12px; text-align:right}
+@media (max-width:560px){ .tr-row{grid-template-columns:24px 64px minmax(0,1fr) 40px; gap:8px} .tr-ago{display:none} .tr-ball{width:24px; height:24px} }
+
+/* ---------- Desktop layout: bet sidebar + game area ---------- */
+@media (min-width:1100px){
+  body{padding:14px 18px}
+  .wrap{grid-template-columns:360px minmax(0,1fr); grid-template-areas:"head head" "side stage" "side main" "foot foot"; column-gap:18px; row-gap:16px; align-items:start}
+  .wrap > header{grid-area:head}
+  .wrap > .stage{grid-area:stage}
+  .wrap > .grid{display:contents}
+  .wrap > footer{grid-area:foot}
+  .grid > .right{grid-area:main}
+  .panel.deck{grid-area:side; position:sticky; top:14px; display:flex; flex-direction:column; gap:16px; padding:18px; align-self:start}
+  .panel.deck > *{grid-area:auto}
+  .deck .tabs{order:0} .deck .f-bet{order:1} .deck .f-target{order:2} .deck #autoBox{order:3} .deck .err{order:4} .deck .play{order:5}
+  .deck .f-target::before{content:"Pick the next ball's colour"; display:block; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px}
+  .deck .f-bet::before{content:"Bet amount"; display:block; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px}
+  .deck .picks{grid-template-columns:minmax(0,1fr); gap:8px}
+  .deck .pk{grid-auto-flow:column; grid-template-columns:auto minmax(0,1fr) auto; justify-items:start; align-items:center; column-gap:12px; padding:8px 12px 8px 8px; border-radius:14px}
+  .deck .pk b{width:44px; height:44px; font-size:17px}
+  .deck .pk-info{display:flex; flex-direction:column; align-items:flex-start; gap:2px; line-height:1.1}
+  .pk-name{font-weight:700; font-size:14px; color:#fff} .pk-range{font-size:12px; color:rgba(255,255,255,.65); font-family:var(--font-mono)}
+  .deck .pk .pm{justify-self:end; font-size:11.5px; padding:4px 8px}
+  .deck .play{min-height:76px; align-self:stretch}
+  .deck .amts{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .callout{top:8px}
+}
+@media (min-width:1500px){ .wrap{grid-template-columns:400px minmax(0,1fr)} }
+@media (min-width:1100px){
+  .panel.deck{align-items:stretch}
+  .panel.deck > *, .deck .f-bet, .deck .f-target, .deck .tabs, .deck .box, .deck .amts, .deck .picks{width:100%; max-width:none; justify-self:stretch}
+  .deck .tabs{display:grid; grid-template-columns:1fr 1fr}
+}

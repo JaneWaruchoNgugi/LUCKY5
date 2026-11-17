@@ -1,19 +1,25 @@
 import './style.css';
 import { all, byId, one } from './dom';
 import { MAX_MULTIPLIER, MULTIPLIER_TABLE } from './fair';
+import { GROUP_NAME } from './format';
 import { Game } from './game';
 import { Sound } from './sound';
 import { mountSoundSettings } from './sound-settings';
 import { Tour, type TourStep } from './tour';
 
 // Show the multipliers a matching ball can carry on every colour pick.
+const RANGES: Record<string, string> = { B: '1–15', I: '16–30', N: '31–45', G: '46–60', O: '61–75' };
 const MIN_MULTIPLIER = Math.min(...MULTIPLIER_TABLE.map(([m]) => m));
 const odds = MULTIPLIER_TABLE.map(([m, c]) => `${m}× (${Math.round(c * 100)}%)`).join(', ');
 for (const pk of all<HTMLButtonElement>('.pk')) {
   const tag = document.createElement('span');
   tag.className = 'pm';
   tag.textContent = `${MIN_MULTIPLIER}–${MAX_MULTIPLIER}×`;
-  pk.append(tag);
+  const L = pk.dataset.p ?? 'B';
+  const info = document.createElement('span');
+  info.className = 'pk-info';
+  info.innerHTML = `<span class="pk-name">${GROUP_NAME[L as keyof typeof GROUP_NAME]}</span><span class="pk-range">${RANGES[L] ?? ''}</span>`;
+  pk.append(info, tag);
   pk.title = `Wins pay your bet × the ball's multiplier: ${odds}`;
   pk.setAttribute('aria-label', `${pk.getAttribute('aria-label') ?? ''}, pays ${MIN_MULTIPLIER} to ${MAX_MULTIPLIER} times`);
 }
