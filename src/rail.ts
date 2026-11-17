@@ -435,39 +435,73 @@ export class Rail {
 
   private drawHistory(g: Geometry): void {
     const { ctx } = this;
-    const y = 12;
-    const h = 24;
-    ctx.font = '600 10px "DM Sans", system-ui, sans-serif';
+    const h = 28;
+    const y = Math.round((g.hist - h) / 2);
+    const mid = y + h / 2;
+    ctx.font = '700 10px "DM Sans", system-ui, sans-serif';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillStyle = C.muted;
-    ctx.fillText('PREVIOUS', 16, y + h / 2);
+    ctx.fillText('PREVIOUS', 16, mid);
     let x = 16 + ctx.measureText('PREVIOUS').width + 12;
     const history = this.history();
     if (!history.length) {
       ctx.fillStyle = alpha(C.muted, 0.7);
       ctx.font = '12px "DM Sans", system-ui, sans-serif';
-      ctx.fillText('Results of past balls show here', x, y + h / 2);
+      ctx.fillText('Results of past balls show here', x, mid);
     }
-    ctx.font = '600 12px "JetBrains Mono", ui-monospace, monospace';
+    const br = 10.5;
     history.forEach((hh, i) => {
-      const txt = `${letterOf(hh.ball)} ${fmtM(hh.mult)}×`;
-      const w = ctx.measureText(txt).width + 18;
+      const L = letterOf(hh.ball);
+      const col = GROUP_COLOR[L];
+      const tc = TIER_COLOR[tier(hh.mult)];
+      const txt = `${fmtM(hh.mult)}×`;
+      ctx.font = '700 12px "JetBrains Mono", ui-monospace, monospace';
+      const w = 4 + br * 2 + 6 + ctx.measureText(txt).width + 10;
       if (x + w > this.W - 12) return;
-      const col = GROUP_COLOR[letterOf(hh.ball)];
-      ctx.globalAlpha = i === 0 ? 1 : Math.max(0.5, 1 - i * 0.04);
+      ctx.globalAlpha = i === 0 ? 1 : Math.max(0.45, 1 - i * 0.05);
+
+      // Capsule: dark glass tinted with the group colour.
       this.pill(x, y, w, h);
-      ctx.fillStyle = alpha(col, i === 0 ? 0.9 : 0.6);
+      const bg = ctx.createLinearGradient(x, 0, x + w, 0);
+      bg.addColorStop(0, alpha(col, i === 0 ? 0.42 : 0.26));
+      bg.addColorStop(1, 'rgba(8,16,16,.55)');
+      ctx.fillStyle = bg;
       ctx.fill();
-      if (hh.you) {
-        ctx.strokeStyle = hh.win ? C.win : C.miss;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      ctx.lineWidth = hh.you ? 2 : 1;
+      ctx.strokeStyle = hh.you ? (hh.win ? C.win : C.miss) : alpha(col, i === 0 ? 0.85 : 0.4);
+      if (i === 0 && !hh.you) {
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 10;
       }
-      ctx.fillStyle = '#0b1414';
+      ctx.stroke();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+
+      // Mini glossy ball with the number.
+      const cx = x + 4 + br;
+      const grad = ctx.createRadialGradient(cx - br * 0.35, mid - br * 0.45, br * 0.1, cx, mid, br);
+      grad.addColorStop(0, mix(col, '#ffffff', 0.6));
+      grad.addColorStop(0.45, col);
+      grad.addColorStop(1, mix(col, '#000000', 0.45));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, mid, br, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fbfbf6';
+      ctx.beginPath();
+      ctx.arc(cx, mid, br * 0.66, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#152020';
       ctx.textAlign = 'center';
-      ctx.fillText(txt, x + w / 2, y + h / 2 + 1);
+      ctx.font = `700 ${hh.ball > 9 ? 8.5 : 9.5}px "JetBrains Mono", ui-monospace, monospace`;
+      ctx.fillText(String(hh.ball), cx, mid + 0.5);
+
+      // Multiplier in its tier colour.
       ctx.textAlign = 'left';
+      ctx.font = '700 12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillStyle = tc;
+      ctx.fillText(txt, cx + br + 6, mid + 1);
       ctx.globalAlpha = 1;
       x += w + 6;
     });
