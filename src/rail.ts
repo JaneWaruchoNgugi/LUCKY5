@@ -309,38 +309,39 @@ export class Rail {
     this.drawPointers(g, top);
   }
 
-  /** Rotating light rays in the drawn ball's colour. */
+  /** Soft halo plus ripple rings that pulse out from the drawn ball in its colour. */
   private drawRays(g: Geometry, cy: number, p: number): void {
     const b = this.balls[this.hit];
     if (!b) return;
     const { ctx } = this;
     const col = GROUP_COLOR[letterOf(b.ball)];
     const cx = this.W / 2;
-    const R = g.railH * 1.1;
     const t = (performance.now() - this.revealAt) / 1000;
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(t * 0.35);
-    const rays = 12;
-    for (let i = 0; i < rays; i++) {
-      const a = (i / rays) * Math.PI * 2;
-      const grad = ctx.createRadialGradient(0, 0, g.r * 0.6, 0, 0, R);
-      grad.addColorStop(0, alpha(col, 0.32 * p));
-      grad.addColorStop(1, alpha(col, 0));
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, R, a - 0.09, a + 0.09);
-      ctx.closePath();
-      ctx.fill();
-    }
-    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, g.r * 2.4);
-    glow.addColorStop(0, alpha(col, 0.35 * p));
-    glow.addColorStop(1, alpha(col, 0));
-    ctx.fillStyle = glow;
+    // Halo.
+    const halo = ctx.createRadialGradient(cx, cy, g.r * 0.8, cx, cy, g.r * 2.2);
+    halo.addColorStop(0, alpha(col, 0.38 * p));
+    halo.addColorStop(1, alpha(col, 0));
+    ctx.fillStyle = halo;
     ctx.beginPath();
-    ctx.arc(0, 0, g.r * 2.4, 0, Math.PI * 2);
+    ctx.arc(cx, cy, g.r * 2.2, 0, Math.PI * 2);
     ctx.fill();
+    // Ripples: three rings, staggered, each expanding and fading over 1.6 s.
+    const period = 1.6;
+    for (let k = 0; k < 3; k++) {
+      const local = t - k * (period / 3);
+      if (local < 0) continue;
+      const q = (local % period) / period;
+      const rad = g.r * (1.15 + q * 1.9);
+      ctx.globalAlpha = (1 - q) * (1 - q);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 4.5 * (1 - q) + 1.5;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
