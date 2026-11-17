@@ -1,13 +1,14 @@
 import { byId } from './dom';
 import type { Sound, SoundConfig } from './sound';
 
-type Toggle = 'ticks' | 'count' | 'result' | 'ui' | 'caller';
+type Toggle = 'ticks' | 'count' | 'result' | 'ui' | 'caller' | 'music';
 const TOGGLES: ReadonlyArray<readonly [id: string, key: Toggle]> = [
   ['sTicks', 'ticks'],
   ['sCount', 'count'],
   ['sResult', 'result'],
   ['sUi', 'ui'],
   ['sCaller', 'caller'],
+  ['sMusic', 'music'],
 ];
 
 /** Wire the sound settings popover in the header. Returns a function that closes it. */

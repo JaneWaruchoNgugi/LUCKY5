@@ -1,3 +1,4 @@
+import { Music } from './music';
 /** Game sounds, synthesised with the Web Audio API (no audio files). */
 
 export type SoundName = 'tick' | 'count' | 'go' | 'land' | 'bet' | 'cancel' | 'click' | 'win' | 'bigwin' | 'lose';
@@ -12,9 +13,11 @@ export interface SoundConfig {
   ui: boolean;
   /** Spoken caller announcing each ball. */
   caller: boolean;
+  /** Soft background music loop. */
+  music: boolean;
 }
 
-const DEFAULTS: SoundConfig = { on: true, vol: 0.6, ticks: true, count: true, result: true, ui: true, caller: true };
+const DEFAULTS: SoundConfig = { on: true, vol: 0.6, ticks: true, count: true, result: true, ui: true, caller: true, music: true };
 
 type AudioCtor = typeof AudioContext;
 
@@ -22,6 +25,7 @@ export class Sound {
   readonly cfg: SoundConfig;
   private ac: AudioContext | null = null;
   private master: GainNode | null = null;
+  private music: Music | null = null;
 
   constructor(private readonly storageKey = 'luckyfive.sound') {
     this.cfg = { ...DEFAULTS };
@@ -36,6 +40,7 @@ export class Sound {
     addEventListener('keydown', () => this.ensure(), { once: true });
     window.speechSynthesis?.addEventListener?.('voiceschanged', () => this.pickVoice());
     this.pickVoice();
+    document.addEventListener('visibilitychange', () => this.syncMusic());
   }
 
   private voice: SpeechSynthesisVoice | null = null;
@@ -59,6 +64,15 @@ export class Sound {
       null;
   }
 
+  /** Start or stop the background loop to match the settings. */
+  syncMusic(): void {
+    if (!this.ac || !this.master) return;
+    this.music ??= new Music(this.ac, this.master);
+    const want = this.cfg.on && this.cfg.music && this.cfg.vol > 0 && document.visibilityState !== 'hidden';
+    if (want) this.music.start();
+    else this.music.stop();
+  }
+
   /** Announce text with the caller voice (deep, steady, bingo-hall style). */
   call(text: string): void {
     const synth = window.speechSynthesis;
@@ -74,6 +88,7 @@ export class Sound {
       u.pitch = 0.75;
       u.rate = 0.92;
       u.volume = Math.min(1, this.cfg.vol * 1.4);
+      this.music?.duck(1.4);
       synth.speak(u);
     } catch {
       /* speech unavailable */
@@ -93,6 +108,7 @@ export class Sound {
       }
       if (this.ac.state === 'suspended') void this.ac.resume();
       this.applyVolume();
+      this.syncMusic();
     } catch {
       /* audio unavailable */
     }
@@ -115,6 +131,7 @@ export class Sound {
       /* storage blocked */
     }
     this.applyVolume();
+    this.syncMusic();
   }
 
   private applyVolume(): void {

@@ -59,7 +59,7 @@ const steps: TourStep[] = [
   {
     target: () => byId('soundBtn'),
     title: 'Settings',
-    text: 'The gear opens settings: replay this tour, reset your demo balance, turn sound and the caller voice on or off, set the volume and choose which sounds you hear.',
+    text: 'The gear opens settings: replay this tour, reset your demo balance, turn sound, music and the caller voice on or off, set the volume and choose which sounds you hear.',
   },
 ];
 
