@@ -33,6 +33,7 @@ export function mountSoundSettings(sound: Sound): () => void {
   };
 
   const toggle = (open: boolean) => {
+    if (open) pop.style.setProperty('--pop-top', `${Math.round(btn.getBoundingClientRect().bottom + 8)}px`);
     pop.hidden = !open;
     btn.setAttribute('aria-expanded', String(open));
   };
@@ -44,6 +45,8 @@ export function mountSoundSettings(sound: Sound): () => void {
   document.addEventListener('click', (e) => {
     if (!pop.hidden && !(e.target as Element).closest('.sound-wrap')) toggle(false);
   });
+  // The phone sheet is fixed to the screen, so close it if the page scrolls away from the gear.
+  addEventListener('resize', () => !pop.hidden && toggle(false));
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') toggle(false);
   });

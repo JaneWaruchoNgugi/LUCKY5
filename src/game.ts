@@ -82,7 +82,11 @@ export class Game {
     this.setPlayLabel();
     const end = performance.now() + BET_WINDOW_MS;
     this.setPhaseBar('Place your bets', BET_WINDOW_MS, 'bet');
-    this.el.callout.innerHTML = '<span class="hint" id="cd"></span>';
+    const lo = this.lastOutcome;
+    this.lastOutcome = null;
+    this.el.callout.innerHTML =
+      (lo ? `<span class="last-pill ${lo.win ? 'win' : 'lose'}">Last bet: ${lo.win ? 'Won' : 'Lost'} ${lo.text}</span>` : '') +
+      '<span class="hint" id="cd"></span>';
     const cd = byId('cd');
     let lastSec = Infinity;
     while (performance.now() < end) {
@@ -134,9 +138,18 @@ export class Game {
       s.bets.unshift({ nonce, mult: res.mult, ball: res.ball, pick: live.pick, bet: live.bet, win, profit: money(payout - live.bet) });
       s.bets = s.bets.slice(0, 30);
       this.sound.play(win ? (res.mult >= 12 ? 'bigwin' : 'win') : 'lose');
-      resultHtml = `<span class="res ${win ? 'win' : 'miss'}">${
-        win ? `Match! ${fmtM(res.mult)}× · +KES ${fmt(payout - live.bet)}` : `Not ${live.pick}, −KES ${fmt(live.bet)}`
-      }</span>`;
+      const net = money(payout - live.bet);
+      resultHtml = `<div class="rcard ${win ? 'win' : 'lose'}" role="status">
+        <span class="rc-icon" aria-hidden="true">${win ? '✓' : '✕'}</span>
+        <span class="rc-body">
+          <span class="rc-title">${win ? 'You won' : 'You lost'}</span>
+          <span class="rc-sub">Your KES ${fmt(live.bet)} on ${live.pick} (${GROUP_NAME[live.pick]}) · ball was ${L}-${res.ball}${win ? ` · ${fmtM(res.mult)}× pays KES ${fmt(payout)}` : ''}</span>
+        </span>
+        <span class="rc-amt">${win ? '+' : '−'}KES ${fmt(Math.abs(win ? net : live.bet))}</span>
+      </div>`;
+      this.lastOutcome = { win, text: win ? `+KES ${fmt(net)}` : `−KES ${fmt(live.bet)}` };
+      this.flashWallet(win, win ? `+${fmt(payout)}` : '');
+      this.flashStage(win);
       if (live.auto && this.autoLeft > 0) this.autoLeft--;
     }
     s.history.unshift({ nonce, mult: res.mult, ball: res.ball, you: !!live, win });
@@ -144,14 +157,17 @@ export class Game {
     s.last = { mult: res.mult, ball: res.ball, seed: res.seed };
     this.live = null;
     this.rail.markHit(LAND, live ? (win ? C.win : C.miss) : C.brass);
-    this.el.callout.innerHTML =
-      `<span class="big" style="color:${GROUP_COLOR[L]}">${L}-${res.ball} · ${fmtM(res.mult)}×</span>` + resultHtml;
+    this.el.callout.innerHTML = live
+      ? resultHtml
+      : `<span class="big" style="color:${GROUP_COLOR[L]}">${L}-${res.ball} · ${fmtM(res.mult)}×</span>` + resultHtml;
     this.renderWallet();
     this.renderLog();
     saveState(s);
     this.setPlayLabel();
-    this.setPhaseBar('Ball called', RESULT_HOLD_MS, 'hold');
-    await sleep(RESULT_HOLD_MS);
+    // Give a settled bet a little longer on screen so the outcome is easy to read.
+    const hold = live ? RESULT_HOLD_MS + 1200 : RESULT_HOLD_MS;
+    this.setPhaseBar('Ball called', hold, 'hold');
+    await sleep(hold);
   }
 
   private setPhaseBar(label: string, ms: number, cls: string): void {
@@ -217,6 +233,38 @@ export class Game {
   }
 
   // ---------- rendering ----------
+
+  private lastOutcome: { win: boolean; text: string } | null = null;
+
+  /** Float the balance change next to the wallet and tint it green or red. */
+  private flashWallet(win: boolean, text: string): void {
+    const wallet = this.el.bal.closest('.wallet');
+    if (!wallet) return;
+    wallet.classList.remove('up', 'down');
+    void (wallet as HTMLElement).offsetWidth;
+    wallet.classList.add(win ? 'up' : 'down');
+    if (!text) {
+      setTimeout(() => wallet.classList.remove('up', 'down'), 2600);
+      return;
+    }
+    const f = document.createElement('span');
+    f.className = `wdelta ${win ? 'up' : 'down'}`;
+    f.textContent = text;
+    wallet.append(f);
+    setTimeout(() => {
+      f.remove();
+      wallet.classList.remove('up', 'down');
+    }, 2600);
+  }
+
+  /** Briefly edge the stage in green or red. */
+  private flashStage(win: boolean): void {
+    const st = byId('stage');
+    st.classList.remove('won', 'lost');
+    void st.offsetWidth;
+    st.classList.add(win ? 'won' : 'lost');
+    setTimeout(() => st.classList.remove('won', 'lost'), 3000);
+  }
 
   private renderWallet(): void {
     this.el.bal.textContent = fmt(this.state.balance);
