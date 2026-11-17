@@ -95,11 +95,18 @@ export class Sound {
 
   private readonly sounds: Record<SoundName, () => void> = {
     tick: () => { if (this.cfg.ticks) this.tone(2200, 0.025, 'square', 0.05); },
-    count: () => { if (this.cfg.count) this.tone(880, 0.07, 'sine', 0.18); },
+    // Race-start style countdown: three short beeps, then a long beep an octave up.
+    count: () => {
+      if (!this.cfg.count) return;
+      this.tone(784, 0.16, 'square', 0.06);
+      this.tone(784, 0.16, 'sine', 0.22);
+      this.tone(1568, 0.08, 'sine', 0.05);
+    },
     go: () => {
       if (!this.cfg.count) return;
-      this.tone(1175, 0.12, 'sine', 0.2);
-      this.tone(1568, 0.16, 'sine', 0.14, 0.05);
+      this.tone(1568, 0.55, 'square', 0.06);
+      this.tone(1568, 0.6, 'sine', 0.24);
+      this.tone(2349, 0.45, 'sine', 0.07, 0.02);
     },
     // The ball drops into the window: a soft knock, then a bright two-note bell.
     land: () => {
