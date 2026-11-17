@@ -32,6 +32,9 @@ const alpha = (hex: string, a: number): string => {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 };
 const ease = (t: number): number => 1 - Math.pow(1 - t, 4.2);
+/** Gentle overshoot used when the landed ball settles into the centre window. */
+const easeBack = (t: number): number => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2);
+const HIT_SCALE = 1.1;
 
 interface Geometry {
   bw: number;
@@ -65,7 +68,7 @@ export class Rail {
 
   geo(): Geometry {
     const small = this.W < 560;
-    return { bw: small ? 70 : 92, gap: small ? 10 : 14, r: small ? 31 : 40, hist: small ? 42 : 46, railH: small ? 142 : 170 };
+    return { bw: small ? 70 : 92, gap: small ? 10 : 14, r: small ? 31 : 40, hist: small ? 42 : 46, railH: small ? 150 : 178 };
   }
 
   private resize(): void {
@@ -150,7 +153,7 @@ export class Rail {
     this.drawHistory(g);
 
     const top = g.hist;
-    const cy = top + g.r + 20;
+    const cy = this.ballY(g);
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, top, this.W, g.railH);
@@ -179,15 +182,48 @@ export class Rail {
     this.drawPointers(g, top);
   }
 
+  private ballY(g: Geometry): number {
+    return g.hist + g.r + 28;
+  }
+
+  /** The centre window: wide and tall enough for the enlarged landed ball, its ring and its tag. */
+  private slotBox(g: Geometry): { x: number; y: number; w: number; h: number } {
+    const cy = this.ballY(g);
+    const hitR = g.r * HIT_SCALE + 5;
+    const tagH = g.r < 34 ? 21 : 24;
+    const w = Math.max(g.bw + g.gap * 0.6, hitR * 2 + 18);
+    const y = cy - hitR - 9;
+    const bottom = cy + g.r * HIT_SCALE + 9 + tagH + 9;
+    return { x: this.W / 2 - w / 2, y, w, h: bottom - y };
+  }
+
+  /** After the slide, ease the landed ball exactly into the centre of the window. */
+  settle(to: number, durationMs = 420): Promise<void> {
+    const from = this.x;
+    if (Math.abs(to - from) < 0.5 || durationMs <= 0) {
+      this.x = to;
+      this.draw();
+      return Promise.resolve();
+    }
+    return new Promise((done) => {
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / durationMs);
+        this.x = from + (to - from) * easeBack(t);
+        this.draw();
+        if (t < 1) requestAnimationFrame(step);
+        else done();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
   /** Glass window behind the centre slot, tinted with the marker colour. */
   private drawSlot(g: Geometry, top: number): void {
     const { ctx } = this;
-    const mx = this.W / 2;
-    const w = g.bw + g.gap * 0.9;
-    const y = top + 10;
-    const h = g.railH - 28;
-    const x = mx - w / 2;
-    const r = 20;
+    void top;
+    const { x, y, w, h } = this.slotBox(g);
+    const r = 22;
     const path = () => {
       ctx.beginPath();
       ctx.moveTo(x + r, y);
@@ -203,20 +239,40 @@ export class Rail {
     ctx.shadowBlur = 24;
     path();
     const fill = ctx.createLinearGradient(0, y, 0, y + h);
-    fill.addColorStop(0, alpha(this.marker, 0.2));
-    fill.addColorStop(0.5, alpha(this.marker, 0.07));
-    fill.addColorStop(1, alpha(this.marker, 0.16));
+    fill.addColorStop(0, alpha(this.marker, 0.24));
+    fill.addColorStop(0.45, alpha(this.marker, 0.06));
+    fill.addColorStop(1, alpha(this.marker, 0.18));
     ctx.fillStyle = fill;
     ctx.fill();
     ctx.shadowColor = 'transparent';
     // edge
     const edge = ctx.createLinearGradient(0, y, 0, y + h);
-    edge.addColorStop(0, alpha(this.marker, 0.85));
-    edge.addColorStop(0.5, alpha(this.marker, 0.25));
-    edge.addColorStop(1, alpha(this.marker, 0.85));
+    edge.addColorStop(0, alpha(this.marker, 0.5));
+    edge.addColorStop(0.5, alpha(this.marker, 0.18));
+    edge.addColorStop(1, alpha(this.marker, 0.5));
     ctx.strokeStyle = edge;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1;
     ctx.stroke();
+    // bright corner brackets frame the window
+    const L = Math.min(18, w * 0.2);
+    ctx.strokeStyle = this.marker;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = this.marker;
+    ctx.shadowBlur = 10;
+    const corner = (cx: number, cy: number, sx: 1 | -1, sy: 1 | -1) => {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + sy * (r * 0.35 + L));
+      ctx.lineTo(cx, cy + sy * r * 0.35);
+      ctx.quadraticCurveTo(cx, cy, cx + sx * r * 0.35, cy);
+      ctx.lineTo(cx + sx * (r * 0.35 + L), cy);
+      ctx.stroke();
+    };
+    corner(x, y, 1, 1);
+    corner(x + w, y, -1, 1);
+    corner(x, y + h, 1, -1);
+    corner(x + w, y + h, -1, -1);
+    ctx.shadowColor = 'transparent';
     // light streak down the middle of the glass
     const streak = ctx.createLinearGradient(x, 0, x + w, 0);
     streak.addColorStop(0, 'rgba(255,255,255,0)');
@@ -232,7 +288,6 @@ export class Rail {
   private drawPointers(g: Geometry, top: number): void {
     const { ctx } = this;
     const mx = this.W / 2;
-    const h0 = g.r < 34 ? 15 : 19;
     const pointer = (tipY: number, dir: 1 | -1) => {
       const w = g.r < 34 ? 13 : 17;
       const h = g.r < 34 ? 15 : 19;
@@ -260,8 +315,10 @@ export class Rail {
       ctx.fill();
       ctx.restore();
     };
-    pointer(top + 6 + h0, 1);
-    pointer(top + g.railH - 6 - h0 + 2, -1);
+    void top;
+    const box = this.slotBox(g);
+    pointer(box.y + 7, 1);
+    pointer(box.y + box.h - 7, -1);
   }
 
   private pill(x: number, y: number, w: number, h: number): void {
@@ -283,7 +340,7 @@ export class Rail {
     ctx.save();
     ctx.translate(cx, cy);
     if (hit) {
-      ctx.scale(1.12, 1.12);
+      ctx.scale(HIT_SCALE, HIT_SCALE);
       ctx.shadowColor = this.hitColor;
       ctx.shadowBlur = 26;
     } else {
@@ -327,7 +384,7 @@ export class Rail {
     ctx.font = `700 ${r < 34 ? 12 : 14}px "JetBrains Mono", ui-monospace, monospace`;
     const tw = ctx.measureText(txt).width + 18;
     const th = r < 34 ? 21 : 24;
-    const ty = cy + r * (hit ? 1.12 : 1) + 9;
+    const ty = cy + r * (hit ? HIT_SCALE : 1) + 9;
     this.pill(cx - tw / 2, ty, tw, th);
     ctx.fillStyle = alpha(tc, hit ? 0.45 : 0.22);
     ctx.fill();

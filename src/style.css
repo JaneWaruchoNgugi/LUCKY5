@@ -235,3 +235,46 @@ footer{color:var(--muted); font-size:12px; text-align:center; max-width:70ch; ma
   .mtag{font-size:11px; padding:2px 7px}
 }
 @media (prefers-reduced-motion:reduce){ .ball{transition:none; animation:none} }
+
+/* ---- edge-to-edge layout, compact header, settings menu ---- */
+body{padding-left:max(10px, env(safe-area-inset-left, 0px)); padding-right:max(10px, env(safe-area-inset-right, 0px)); padding-block:10px 24px}
+.wrap{max-width:none; gap:10px}
+header{flex-wrap:nowrap; padding:4px 4px 2px}
+.logo{font-size:clamp(22px,3vw,32px)}
+.hdr-right{flex-wrap:nowrap; gap:8px}
+.wallet{padding:7px 14px; gap:6px}
+.wallet .bal{font-size:16px}
+.pop{width:290px; gap:10px; max-height:calc(100vh - 90px); overflow:auto}
+.pop-head{font-family:var(--font-display); color:var(--brass); font-size:15px; letter-spacing:.04em}
+.pop-item{display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border-radius:10px; background:var(--rail); border:1px solid var(--line); font-weight:600; font-size:14px; text-align:left}
+.pop-item:hover{border-color:color-mix(in srgb, var(--brass) 45%, transparent)}
+.pop-item svg{width:18px; height:18px; color:var(--brass); flex:none}
+.pop-item span{flex:1}
+.pop-item i{font-style:normal; color:var(--muted); font-size:18px; line-height:1}
+.pop-sub{display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.pop-sub svg{width:16px; height:16px}
+.pop-note{margin:0; font-size:12px; color:var(--muted)}
+.pop .switch{flex:none}
+@media (max-width:560px){
+  body{padding-left:env(safe-area-inset-left, 0px); padding-right:env(safe-area-inset-right, 0px); padding-block:0 16px}
+  .wrap{gap:6px}
+  header{padding:10px 12px 4px}
+  .logo{font-size:21px}
+  .logo span:empty{width:.55em; height:.55em; margin:0 1px}
+  .wallet{padding:6px 10px}
+  .wallet .bal{font-size:14px}
+  .wallet .cur{font-size:11px}
+  .icon-btn{width:36px; height:36px}
+  .pop{right:0; left:auto; width:min(290px, calc(100vw - 24px))}
+  .stage, .panel{border-radius:0; border-left:0; border-right:0}
+  .deck{padding:12px}
+  footer{padding:0 12px}
+}
+.wrap{grid-template-columns:minmax(0,1fr)}
+header{min-width:0}
+.logo{min-width:0; flex-shrink:1}
+@media (max-width:420px){
+  .logo span:empty{display:none}
+  .logo em{margin-left:.15em}
+}
+.pop-row.col{grid-template-columns:minmax(0,1fr)} .pop input[type="range"]{width:100%; margin:0}

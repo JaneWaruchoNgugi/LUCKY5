@@ -28,8 +28,8 @@ export function mountSoundSettings(sound: Sound): () => void {
       input.disabled = !cfg.on;
     }
     const muted = !cfg.on || cfg.vol === 0;
-    byId('sndWaves').toggleAttribute('hidden', muted);
-    byId('sndMute').toggleAttribute('hidden', !muted);
+    document.getElementById('sndWaves')?.toggleAttribute('hidden', muted);
+    document.getElementById('sndMute')?.toggleAttribute('hidden', !muted);
   };
 
   const toggle = (open: boolean) => {

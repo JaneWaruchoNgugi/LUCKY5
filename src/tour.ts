@@ -73,7 +73,7 @@ export class Tour {
     } catch {
       /* storage blocked */
     }
-    byId('helpBtn').focus({ preventScroll: true });
+    byId('soundBtn').focus({ preventScroll: true });
   }
 
   private show(i: number): void {

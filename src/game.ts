@@ -120,6 +120,7 @@ export class Game {
       live ? `Rolling · your KES ${fmt(live.bet)} on ${live.pick} (${GROUP_NAME[live.pick]})` : 'Rolling · no bet from you this round'
     }</span>`;
     await this.rail.slide(from, to, prefersReducedMotion() ? 150 : SLIDE_MS);
+    await this.rail.settle(this.rail.offsetFor(LAND), prefersReducedMotion() ? 0 : 420);
 
     // Settle the round.
     this.phase = 'result';
