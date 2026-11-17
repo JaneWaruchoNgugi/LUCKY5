@@ -28,22 +28,35 @@ Multiplier odds: 1.55× 40%, 3.2× 25%, 5× 15%, 8× 10%, 12× 6%, 25× 3%, 50×
 
 ## Tech
 
-TypeScript (strict) built with Vite. Tests use Vitest.
+React 18 and TypeScript (strict), built with Vite. Tests use Vitest.
+
+The round clock lives in `GameEngine`, a plain TypeScript class outside React, so a re-render can never restart a round. Components read the slices they need with `useGame(selector)`, which wraps `useSyncExternalStore`.
 
 ```
 src/
-  main.ts            start-up: game, sound settings, tour steps
-  game.ts            round clock, bets, bet panel and round log
-  rail.ts            canvas renderer for the balls and the "Previous" row
-  fair.ts            seeded results, multiplier table, PRNG for the decoy balls
-  sound.ts           Web Audio sound effects
-  sound-settings.ts  the sound settings menu
-  tour.ts            How to play overlay
-  state.ts           saved balance and history (localStorage)
-  format.ts          group names, number formatting
-  types.ts           shared types
-  style.css
-tests/fair.test.ts   odds, determinism and helpers
+  main.tsx                 entry: creates Sound and GameEngine, mounts <App>
+  App.tsx                  page layout, tour state, keyboard shortcuts
+  components/
+    layout/                Header, Wallet (balance), SettingsMenu (gear menu)
+    stage/                 Stage (canvas rail), Countdown, YourPick, ResultBanner
+    bet/                   BetPanel, ModeTabs, BetAmount, ColourPicks, AutoRounds, PlayButton
+    log/                   RoundLog
+    tour/                  Tour overlay and its steps
+    common/                Chips (pick tag and drawn-ball chip)
+  context/GameContext.tsx  engine, sound and tour controls for components
+  hooks/                   useGame (store selector), useShortcuts (B I N G O, Space)
+  game/
+    engine.ts              round clock, bets and payouts (no DOM)
+    fair.ts                seeded results, multiplier table, PRNG for the decoy balls
+    state.ts               saved balance and history (localStorage)
+    format.ts              group names, number formatting
+    theme.ts               group, multiplier and rail colours
+    types.ts               shared types
+  canvas/rail.ts           canvas renderer for the balls and the "Previous" row
+  audio/                   sound.ts (Web Audio effects and caller), music.ts (background loop)
+  lib/dom.ts               sleep, reduced-motion check
+  styles/global.css
+tests/fair.test.ts         odds, determinism and helpers
 ```
 
 ## Run it

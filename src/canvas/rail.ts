@@ -1,20 +1,9 @@
-import { prefersReducedMotion } from './dom';
-import { decoy, mulberry32 } from './fair';
-import { fmtM, letterOf, tier, type Tier } from './format';
-import type { Sound } from './sound';
-import type { Ball, HistoryEntry, LastBall, Letter } from './types';
-
-/** Colours of the five groups. */
-export const GROUP_COLOR: Record<Letter, string> = { B: '#4a5cff', I: '#ff2d6f', N: '#8a9896', G: '#1fd16a', O: '#ff9418' };
-const TIER_COLOR: Record<Tier, string> = { t1: '#6f8f8a', t2: '#a9c4bd', t3: '#ffcf3d', t4: '#ff9f2e', t5: '#ff4fd2' };
-export const C = {
-  rail: '#071a1b',
-  muted: '#8fb3ab',
-  brass: '#ffcf3d',
-  win: '#3ddc84',
-  miss: '#ff6b5e',
-  line: '#1e4a49',
-} as const;
+import { prefersReducedMotion } from '../lib/dom';
+import { decoy, mulberry32 } from '../game/fair';
+import { fmtM, letterOf, tier } from '../game/format';
+import { C, GROUP_COLOR, TIER_COLOR } from '../game/theme';
+import type { Sound } from '../audio/sound';
+import type { Ball, HistoryEntry, LastBall } from '../game/types';
 
 const N_BALLS = 64;
 /** Index of the ball under the marker when a slide starts. */

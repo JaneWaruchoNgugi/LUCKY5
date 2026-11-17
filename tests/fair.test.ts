@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MULTIPLIER_TABLE, multFor, mulberry32, roll } from '../src/fair';
-import { fmtM, letterOf } from '../src/format';
+import { MULTIPLIER_TABLE, multFor, mulberry32, roll } from '../src/game/fair';
+import { fmtM, letterOf } from '../src/game/format';
 
 describe('multiplier table', () => {
   it('probabilities add up to 1', () => {
