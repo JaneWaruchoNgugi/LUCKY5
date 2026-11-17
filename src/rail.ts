@@ -65,7 +65,7 @@ export class Rail {
 
   geo(): Geometry {
     const small = this.W < 560;
-    return { bw: small ? 70 : 92, gap: small ? 10 : 14, r: small ? 31 : 40, hist: small ? 42 : 46, railH: small ? 132 : 158 };
+    return { bw: small ? 70 : 92, gap: small ? 10 : 14, r: small ? 31 : 40, hist: small ? 42 : 46, railH: small ? 142 : 170 };
   }
 
   private resize(): void {
@@ -155,6 +155,7 @@ export class Rail {
     ctx.beginPath();
     ctx.rect(0, top, this.W, g.railH);
     ctx.clip();
+    this.drawSlot(g, top);
     this.balls.forEach((b, i) => {
       const cx = this.x + i * pitch + g.bw / 2;
       if (cx < -g.bw || cx > this.W + g.bw) return;
@@ -174,19 +175,93 @@ export class Rail {
     ctx.fillStyle = fg;
     ctx.fillRect(this.W - fw, top, fw, g.railH);
 
-    // Marker: a pointer at the top and a short line at the bottom.
-    const mx = this.W / 2;
-    ctx.fillStyle = this.marker;
-    ctx.beginPath();
-    ctx.moveTo(mx - 11, top);
-    ctx.lineTo(mx + 11, top);
-    ctx.lineTo(mx, top + 14);
-    ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha = 0.7;
-    ctx.fillRect(mx - 1.5, top + g.railH - 14, 3, 14);
-    ctx.globalAlpha = 1;
     ctx.restore();
+    this.drawPointers(g, top);
+  }
+
+  /** Glass window behind the centre slot, tinted with the marker colour. */
+  private drawSlot(g: Geometry, top: number): void {
+    const { ctx } = this;
+    const mx = this.W / 2;
+    const w = g.bw + g.gap * 0.9;
+    const y = top + 10;
+    const h = g.railH - 28;
+    const x = mx - w / 2;
+    const r = 20;
+    const path = () => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    };
+    ctx.save();
+    // soft outer glow
+    ctx.shadowColor = alpha(this.marker, 0.45);
+    ctx.shadowBlur = 24;
+    path();
+    const fill = ctx.createLinearGradient(0, y, 0, y + h);
+    fill.addColorStop(0, alpha(this.marker, 0.2));
+    fill.addColorStop(0.5, alpha(this.marker, 0.07));
+    fill.addColorStop(1, alpha(this.marker, 0.16));
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    // edge
+    const edge = ctx.createLinearGradient(0, y, 0, y + h);
+    edge.addColorStop(0, alpha(this.marker, 0.85));
+    edge.addColorStop(0.5, alpha(this.marker, 0.25));
+    edge.addColorStop(1, alpha(this.marker, 0.85));
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // light streak down the middle of the glass
+    const streak = ctx.createLinearGradient(x, 0, x + w, 0);
+    streak.addColorStop(0, 'rgba(255,255,255,0)');
+    streak.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+    streak.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = streak;
+    path();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** Glowing pointers above and below the centre slot. */
+  private drawPointers(g: Geometry, top: number): void {
+    const { ctx } = this;
+    const mx = this.W / 2;
+    const h0 = g.r < 34 ? 15 : 19;
+    const pointer = (tipY: number, dir: 1 | -1) => {
+      const w = g.r < 34 ? 13 : 17;
+      const h = g.r < 34 ? 15 : 19;
+      const baseY = tipY - dir * h;
+      ctx.save();
+      ctx.shadowColor = this.marker;
+      ctx.shadowBlur = 14;
+      const grad = ctx.createLinearGradient(0, baseY, 0, tipY);
+      grad.addColorStop(0, mix(this.marker, '#ffffff', 0.55));
+      grad.addColorStop(1, this.marker);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(mx - w, baseY);
+      ctx.lineTo(mx + w, baseY);
+      ctx.quadraticCurveTo(mx + w * 0.25, baseY + dir * h * 0.55, mx + 2.5, tipY - dir * 2);
+      ctx.quadraticCurveTo(mx, tipY + dir * 1.5, mx - 2.5, tipY - dir * 2);
+      ctx.quadraticCurveTo(mx - w * 0.25, baseY + dir * h * 0.55, mx - w, baseY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      // small shine on the pointer
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(mx - w * 0.35, baseY + dir * 3.5, 4, 1.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    pointer(top + 6 + h0, 1);
+    pointer(top + g.railH - 6 - h0 + 2, -1);
   }
 
   private pill(x: number, y: number, w: number, h: number): void {
