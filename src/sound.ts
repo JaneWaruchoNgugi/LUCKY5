@@ -101,7 +101,16 @@ export class Sound {
       this.tone(1175, 0.12, 'sine', 0.2);
       this.tone(1568, 0.16, 'sine', 0.14, 0.05);
     },
-    land: () => { if (this.cfg.ticks) this.tone(320, 0.18, 'triangle', 0.28, 0, 180); },
+    // The ball drops into the window: a soft knock, then a bright two-note bell.
+    land: () => {
+      if (!this.cfg.ticks && !this.cfg.result) return;
+      this.tone(150, 0.09, 'sine', 0.3, 0, 90);
+      for (const [f, w] of [[988, 0], [1319, 0.07]] as const) {
+        this.tone(f, 0.9, 'sine', 0.2, w);
+        this.tone(f * 2.76, 0.35, 'sine', 0.05, w);
+        this.tone(f * 5.4, 0.15, 'sine', 0.025, w);
+      }
+    },
     bet: () => {
       if (!this.cfg.ui) return;
       this.tone(660, 0.07, 'triangle', 0.2);
