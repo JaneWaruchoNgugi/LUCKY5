@@ -415,107 +415,107 @@ export class Rail {
     });
   }
 
-  /** Glass window behind the centre slot, tinted with the marker colour. */
+  /** Light beam behind the centre: a soft vertical column in the marker colour. */
   private drawSlot(g: Geometry, top: number): void {
     const { ctx } = this;
-    void top;
-    const { x, y, w, h } = this.slotBox(g);
-    const r = 22;
-    const path = () => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-    };
+    const mx = this.W / 2;
+    const cy = this.ballY(g);
+    const bw = g.r * 2.6;
     ctx.save();
-    // soft outer glow
-    ctx.shadowColor = alpha(this.marker, 0.45);
-    ctx.shadowBlur = 24;
-    path();
-    const fill = ctx.createLinearGradient(0, y, 0, y + h);
-    fill.addColorStop(0, alpha(this.marker, 0.24));
-    fill.addColorStop(0.45, alpha(this.marker, 0.06));
-    fill.addColorStop(1, alpha(this.marker, 0.18));
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.shadowColor = 'transparent';
-    // edge
-    const edge = ctx.createLinearGradient(0, y, 0, y + h);
-    edge.addColorStop(0, alpha(this.marker, 0.5));
-    edge.addColorStop(0.5, alpha(this.marker, 0.18));
-    edge.addColorStop(1, alpha(this.marker, 0.5));
-    ctx.strokeStyle = edge;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // bright corner brackets frame the window
-    const L = Math.min(18, w * 0.2);
-    ctx.strokeStyle = this.marker;
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.shadowColor = this.marker;
-    ctx.shadowBlur = 10;
-    const corner = (cx: number, cy: number, sx: 1 | -1, sy: 1 | -1) => {
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + sy * (r * 0.35 + L));
-      ctx.lineTo(cx, cy + sy * r * 0.35);
-      ctx.quadraticCurveTo(cx, cy, cx + sx * r * 0.35, cy);
-      ctx.lineTo(cx + sx * (r * 0.35 + L), cy);
-      ctx.stroke();
-    };
-    corner(x, y, 1, 1);
-    corner(x + w, y, -1, 1);
-    corner(x, y + h, 1, -1);
-    corner(x + w, y + h, -1, -1);
-    ctx.shadowColor = 'transparent';
-    // light streak down the middle of the glass
-    const streak = ctx.createLinearGradient(x, 0, x + w, 0);
-    streak.addColorStop(0, 'rgba(255,255,255,0)');
-    streak.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-    streak.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = streak;
-    path();
+    const beam = ctx.createLinearGradient(mx - bw / 2, 0, mx + bw / 2, 0);
+    beam.addColorStop(0, alpha(this.marker, 0));
+    beam.addColorStop(0.5, alpha(this.marker, 0.13));
+    beam.addColorStop(1, alpha(this.marker, 0));
+    ctx.fillStyle = beam;
+    ctx.fillRect(mx - bw / 2, top, bw, g.railH);
+    // Floor glow under the ball.
+    const floor = ctx.createRadialGradient(mx, cy, g.r * 0.4, mx, cy, g.r * 1.9);
+    floor.addColorStop(0, alpha(this.marker, 0.16));
+    floor.addColorStop(1, alpha(this.marker, 0));
+    ctx.fillStyle = floor;
+    ctx.beginPath();
+    ctx.arc(mx, cy, g.r * 1.9, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  /** Glowing pointers above and below the centre slot. */
+  /** Target ring around the landing spot: four glowing arcs, tick marks and slim chevrons. */
   private drawPointers(g: Geometry, top: number): void {
     const { ctx } = this;
     const mx = this.W / 2;
-    const pointer = (tipY: number, dir: 1 | -1) => {
-      const w = g.r < 34 ? 13 : 17;
-      const h = g.r < 34 ? 15 : 19;
-      const baseY = tipY - dir * h;
+    const cy = this.ballY(g);
+    const R = g.r * HIT_SCALE + (g.r < 34 ? 7 : 9);
+    const col = this.marker;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    // Four arcs with gaps at top, bottom, left and right.
+    const gap = 0.32;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = g.r < 34 ? 2.5 : 3;
+    for (let q = 0; q < 4; q++) {
+      const a0 = (q * Math.PI) / 2 + gap;
+      const a1 = ((q + 1) * Math.PI) / 2 - gap;
+      ctx.beginPath();
+      ctx.arc(mx, cy, R, a0, a1);
+      ctx.stroke();
+    }
+    // Faint inner ring.
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = alpha(col, 0.28);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(mx, cy, R + 6, 0, Math.PI * 2);
+    ctx.stroke();
+    // Side ticks pointing in.
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 8;
+    for (const sx of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(mx + sx * (R + 10), cy);
+      ctx.lineTo(mx + sx * (R - 2), cy);
+      ctx.stroke();
+    }
+    // Beam lines from the top edge and to the bottom edge.
+    const line = (y0: number, y1: number) => {
+      const lg = ctx.createLinearGradient(0, y0, 0, y1);
+      lg.addColorStop(0, alpha(col, y0 < y1 ? 0 : 0.9));
+      lg.addColorStop(1, alpha(col, y0 < y1 ? 0.9 : 0));
+      ctx.strokeStyle = lg;
+      ctx.lineWidth = 1.5;
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.moveTo(mx, y0);
+      ctx.lineTo(mx, y1);
+      ctx.stroke();
+    };
+    const chevH = g.r < 34 ? 9 : 11;
+    line(top + 2, cy - R - chevH - 2);
+    // Slim chevrons at the top (pointing down) and bottom (pointing up).
+    const chevron = (tipY: number, dir: 1 | -1) => {
+      const w = g.r < 34 ? 9 : 11;
       ctx.save();
-      ctx.shadowColor = this.marker;
-      ctx.shadowBlur = 14;
-      const grad = ctx.createLinearGradient(0, baseY, 0, tipY);
-      grad.addColorStop(0, mix(this.marker, '#ffffff', 0.55));
-      grad.addColorStop(1, this.marker);
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12;
+      const grad = ctx.createLinearGradient(0, tipY - dir * chevH, 0, tipY);
+      grad.addColorStop(0, mix(col, '#ffffff', 0.6));
+      grad.addColorStop(1, col);
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(mx - w, baseY);
-      ctx.lineTo(mx + w, baseY);
-      ctx.quadraticCurveTo(mx + w * 0.25, baseY + dir * h * 0.55, mx + 2.5, tipY - dir * 2);
-      ctx.quadraticCurveTo(mx, tipY + dir * 1.5, mx - 2.5, tipY - dir * 2);
-      ctx.quadraticCurveTo(mx - w * 0.25, baseY + dir * h * 0.55, mx - w, baseY);
+      ctx.moveTo(mx - w, tipY - dir * chevH);
+      ctx.lineTo(mx, tipY);
+      ctx.lineTo(mx + w, tipY - dir * chevH);
+      ctx.lineTo(mx, tipY - dir * chevH * 0.45);
       ctx.closePath();
-      ctx.fill();
-      ctx.shadowColor = 'transparent';
-      // small shine on the pointer
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.beginPath();
-      ctx.ellipse(mx - w * 0.35, baseY + dir * 3.5, 4, 1.6, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     };
-    void top;
+    chevron(cy - R + 3, 1);
     const box = this.slotBox(g);
-    pointer(box.y + 7, 1);
-    pointer(box.y + box.h - 7, -1);
+    chevron(box.y + box.h - 4, -1);
+    ctx.restore();
   }
 
   private pill(x: number, y: number, w: number, h: number): void {
