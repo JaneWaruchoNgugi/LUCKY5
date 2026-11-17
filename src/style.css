@@ -426,3 +426,84 @@ header{min-width:0}
 .rounds-seg button small{font:600 9.5px/1 var(--font-body, system-ui), sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
 .rounds-seg button.on{border:1.5px solid var(--brass); background:rgba(255,207,61,.12); color:var(--brass)}
 .rounds-seg button.on small{color:var(--brass)}
+
+/* ---------- Your pick badge on the rail (flat tag, never a ball) ---------- */
+.your-pick{position:absolute; left:12px; z-index:6; display:grid; grid-template-columns:auto auto; grid-template-rows:auto auto; column-gap:8px; align-items:center;
+  padding:6px 12px 6px 6px; border-radius:12px; background:rgba(6,16,16,.88); border:1.5px dashed var(--c);
+  box-shadow:0 0 16px color-mix(in srgb, var(--c) 30%, transparent); pointer-events:none; animation:yp-in .3s ease-out}
+.your-pick small{grid-column:2; font-size:9.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.your-pick b{grid-row:1 / span 2; display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:var(--c); color:#0b1414;
+  font-family:var(--font-display); font-size:16px}
+.your-pick span{grid-column:2; font-size:12px; font-weight:700; color:#e8f2ef; white-space:nowrap}
+@keyframes yp-in{from{opacity:0; transform:translateY(-6px)}}
+
+/* ---------- Pick chip vs ball chip ---------- */
+.pick-chip{display:inline-flex; align-items:center; gap:6px; padding:3px 9px 3px 4px; border-radius:7px; border:1.5px dashed var(--c);
+  font-size:12px; font-weight:700; color:#e8f2ef; white-space:nowrap; background:color-mix(in srgb, var(--c) 12%, transparent)}
+.pick-chip i{width:16px; height:16px; border-radius:4px; background:var(--c)}
+.ball-chip{display:inline-flex; align-items:center; gap:7px; white-space:nowrap; font-weight:700}
+.ball-chip b{display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:50%; font:700 11px/1 var(--font-mono); color:#152020;
+  background:radial-gradient(circle, #fbfbf6 0 54%, transparent 56%), radial-gradient(circle at 35% 30%, #fff9, var(--c) 55%, #0007);
+  box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.ball-chip .bc-l{color:var(--c); font-family:var(--font-display); font-size:14px; letter-spacing:.02em}
+.ball-chip [class^="m-"]{font-family:var(--font-mono); font-size:13px}
+.m-t1{color:#a9bcb7} .m-t2{color:#cfe3dd} .m-t3{color:#ffcf3d} .m-t4{color:#ff9f2e} .m-t5{color:#ff4fd2}
+
+/* ---------- Result banner: you picked vs drawn ---------- */
+.rcard{gap:12px; padding:5px 16px 5px 5px}
+.rc-vs{display:flex; align-items:center; gap:10px; padding-left:12px; border-left:1px solid rgba(255,255,255,.12)}
+.vs-item{display:flex; flex-direction:column; gap:2px} .vs-item small{font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.vs-arrow{font-family:var(--font-display); font-size:18px; color:var(--muted)}
+.win .vs-arrow{color:var(--win)} .lose .vs-arrow{color:var(--miss)}
+.rcard .ball-chip b{width:26px; height:26px; font-size:10px}
+.rcard .ball-chip .bc-l{display:none}
+@media (max-width:560px){
+  .rcard{gap:8px; padding:4px 10px 4px 4px}
+  .rc-vs{gap:6px; padding-left:8px} .vs-item small{display:none}
+  .rcard .pick-chip{font-size:11px; padding:2px 6px 2px 3px} .rcard .pick-chip{gap:4px}
+  .rcard .ball-chip [class^="m-"]{font-size:11px}
+  .rc-title{font-size:13px} .rc-amt{font-size:13px} .rc-icon{width:24px; height:24px; font-size:13px}
+}
+@media (max-width:400px){ .rcard .pick-chip{font-size:0; gap:0; padding:3px} .rcard .pick-chip i{width:14px; height:14px} }
+
+/* ---------- Round history rows ---------- */
+.log-list{display:grid; gap:6px}
+.lg-empty{color:var(--muted); font-size:13px; padding:8px 2px}
+.lg-row{display:grid; grid-template-columns:52px minmax(150px,1.3fr) minmax(120px,1fr) minmax(90px,.8fr) minmax(120px,1fr); align-items:center; gap:12px;
+  padding:8px 12px; border-radius:12px; background:rgba(255,255,255,.025); border-left:3px solid var(--line)}
+.lg-row.win{border-left-color:var(--win); background:linear-gradient(90deg, rgba(61,220,132,.09), rgba(255,255,255,.02) 40%)}
+.lg-row.lose{border-left-color:rgba(255,107,94,.6)}
+.lg-rd{font-family:var(--font-mono); font-size:12px; color:var(--muted)}
+.lg-pick, .lg-bet{display:flex; flex-direction:column; gap:3px; font-size:13px; font-family:var(--font-mono); align-items:flex-start}
+.lg-pick small, .lg-bet small{font:800 9px/1 var(--font-body, system-ui), sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.lg-res{display:flex; align-items:center; justify-content:flex-end; gap:8px; font-family:var(--font-mono); font-weight:700; font-size:14px; white-space:nowrap}
+.lg-res em{font-style:normal; font:800 10px/1 var(--font-body, system-ui), sans-serif; letter-spacing:.1em; padding:4px 7px; border-radius:6px}
+.win .lg-res{color:var(--win)} .win .lg-res em{background:var(--win); color:#0b1414}
+.lose .lg-res{color:var(--miss)} .lose .lg-res em{background:rgba(255,107,94,.18); color:var(--miss)}
+@media (max-width:700px){
+  .lg-row{grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"drawn res" "pick bet"; row-gap:6px; padding:8px 10px}
+  .lg-rd{display:none} .lg-drawn{grid-area:drawn} .lg-res{grid-area:res} .lg-pick{grid-area:pick; flex-direction:row; align-items:center; gap:6px}
+  .lg-bet{grid-area:bet; flex-direction:row; align-items:center; gap:6px; justify-self:end; color:var(--muted); font-size:12px}
+}
+
+/* ---------- Compact betting area on mobile ---------- */
+@media (max-width:560px){
+  .panel.deck{gap:8px; padding:10px 10px 12px}
+  .deck .tabs{height:36px} .deck .tabs button{font-size:13px}
+  .deck .box{height:44px} .deck .box .step{height:34px; min-width:36px}
+  .deck .amts button{height:30px; font-size:12px}
+  .deck .picks{gap:6px}
+  .deck .pk{padding:6px 0 5px; row-gap:4px}
+  .deck .pk b{width:36px; height:36px; font-size:14px}
+  .deck .pk .pm{font-size:9px; padding:2px 4px}
+  .deck .play{min-height:52px; padding:6px 10px} .deck .play .pl-main{font-size:18px} .deck .play .pl-sub{font-size:11px}
+  .rounds-lbl{margin-bottom:4px} .rounds-seg button{padding:4px 0}
+}
+@media (max-width:560px){
+  .your-pick{left:8px; padding:4px 8px 4px 4px; column-gap:6px; border-radius:10px}
+  .your-pick span{display:none} .your-pick small{grid-row:1 / span 2; font-size:9px}
+  .your-pick b{width:24px; height:24px; font-size:13px; border-radius:6px}
+  .callout{padding:0 6px} .callout .rcard{width:100%; justify-content:space-between}
+}
+.pick-chip i{display:grid; place-items:center; width:18px; height:18px; font:400 11px/1 var(--font-display); font-style:normal; color:#0b1414}
+@media (max-width:400px){ .rcard .pick-chip i{width:20px; height:20px; font-size:12px} }

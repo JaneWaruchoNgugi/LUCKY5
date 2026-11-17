@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from './dom';
 import { decoy, mulberry32 } from './fair';
 import { fmtM, letterOf, tier, type Tier } from './format';
 import type { Sound } from './sound';
@@ -85,6 +86,13 @@ export class Rail {
   private restX = 0;
   private hit = -1;
   private hitColor: string = C.brass;
+  /** Reveal effect for the landed ball (spotlight, bounce, sparks). */
+  private revealAt = 0;
+  private fxRaf = 0;
+  private sparks: { a: number; v: number; s: number; c: string }[] = [];
+  /** Strip speed in px per frame, for motion trails. */
+  private speed = 0;
+  private dir = 0;
   private marker: string = C.brass;
   private W = 0;
   private H = 0;
@@ -152,18 +160,81 @@ export class Rail {
     this.hit = index;
     this.hitColor = color;
     this.marker = color;
-    this.draw();
+    this.speed = 0;
+    this.startReveal();
+  }
+
+  private startReveal(): void {
+    this.stopFx();
+    const b = this.balls[this.hit];
+    const col = b ? GROUP_COLOR[letterOf(b.ball)] : C.brass;
+    this.sparks = Array.from({ length: 22 }, (_, i) => ({
+      a: (i / 22) * Math.PI * 2 + Math.random() * 0.3,
+      v: 0.7 + Math.random() * 0.6,
+      s: 1.5 + Math.random() * 2.2,
+      c: i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? col : this.hitColor,
+    }));
+    this.revealAt = performance.now();
+    if (prefersReducedMotion()) {
+      this.revealAt -= 5000;
+      this.draw();
+      return;
+    }
+    const loop = () => {
+      this.draw();
+      if (performance.now() - this.revealAt < 4200) this.fxRaf = requestAnimationFrame(loop);
+    };
+    this.fxRaf = requestAnimationFrame(loop);
+  }
+
+  private stopFx(): void {
+    cancelAnimationFrame(this.fxRaf);
+    this.fxRaf = 0;
+  }
+
+  /** 0→1 progress of the reveal; 1 when idle. */
+  private revealP(): number {
+    if (this.hit < 0 || !this.revealAt) return 1;
+    return Math.min(1, (performance.now() - this.revealAt) / 650);
+  }
+
+  /** Scale of the landed ball: a quick pop past full size, then a squash back to rest. */
+  private hitScale(): number {
+    const p = this.revealP();
+    if (p >= 1) return HIT_SCALE;
+    const pop = Math.sin(p * Math.PI) * 0.16 * (1 - p * 0.4);
+    return HIT_SCALE + pop;
   }
 
   /** Animate the strip; ticks once per ball passing the marker. */
   slide(from: number, to: number, durationMs: number): Promise<void> {
+    this.stopFx();
+    this.revealAt = 0;
     return new Promise((done) => {
-      const t0 = performance.now();
       const pitch = this.geo().bw + this.geo().gap;
+      // Wind-up: the strip leans back a little before it launches.
+      const wind = durationMs > 1000 ? 280 : 0;
+      const back = -Math.sign(to - from) * pitch * 0.32;
+      const t0 = performance.now() + wind;
+      const tw = performance.now();
       let lastIdx = Math.floor((this.W / 2 - from) / pitch);
+      let prev = from;
+      this.dir = Math.sign(to - from);
       const step = (now: number) => {
+        if (now < t0) {
+          const w = (now - tw) / wind;
+          this.x = from + back * Math.sin(w * Math.PI * 0.5);
+          this.speed = 0;
+          this.draw();
+          requestAnimationFrame(step);
+          return;
+        }
         const t = Math.min(1, (now - t0) / durationMs);
-        this.x = from + (to - from) * ease(t);
+        // Release from the wind-up position into the main glide.
+        const start = from + back * Math.max(0, 1 - t * 6);
+        this.x = start + (to - start) * ease(t);
+        this.speed = Math.abs(this.x - prev);
+        prev = this.x;
         this.draw();
         const idx = Math.floor((this.W / 2 - this.x) / pitch);
         if (idx !== lastIdx) {
@@ -171,7 +242,10 @@ export class Rail {
           this.sound.play('tick');
         }
         if (t < 1) requestAnimationFrame(step);
-        else done();
+        else {
+          this.speed = 0;
+          done();
+        }
       };
       this.x = from;
       this.restX = to;
@@ -193,12 +267,21 @@ export class Rail {
     ctx.beginPath();
     ctx.rect(0, top, this.W, g.railH);
     ctx.clip();
+    const p = this.revealP();
+    const revealing = this.hit >= 0 && this.revealAt > 0;
+    if (revealing) this.drawRays(g, cy, p);
     this.drawSlot(g, top);
     this.balls.forEach((b, i) => {
       const cx = this.x + i * pitch + g.bw / 2;
       if (cx < -g.bw || cx > this.W + g.bw) return;
-      this.drawBall(b, cx, cy, g.r, i === this.hit, (this.x - this.restX) / g.r);
+      const isHit = i === this.hit;
+      // Neighbours step back so the drawn ball owns the stage.
+      ctx.globalAlpha = revealing && !isHit ? 1 - 0.55 * p : 1;
+      if (this.speed > 4) this.drawTrail(b, cx, cy, g.r);
+      this.drawBall(b, cx, cy, g.r, isHit, (this.x - this.restX) / g.r);
+      ctx.globalAlpha = 1;
     });
+    if (revealing) this.drawSparks(g, cy);
 
     // Fade the strip out at both edges.
     const fw = Math.min(140, this.W * 0.14);
@@ -215,6 +298,75 @@ export class Rail {
 
     ctx.restore();
     this.drawPointers(g, top);
+  }
+
+  /** Rotating light rays in the drawn ball's colour. */
+  private drawRays(g: Geometry, cy: number, p: number): void {
+    const b = this.balls[this.hit];
+    if (!b) return;
+    const { ctx } = this;
+    const col = GROUP_COLOR[letterOf(b.ball)];
+    const cx = this.W / 2;
+    const R = g.railH * 1.1;
+    const t = (performance.now() - this.revealAt) / 1000;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t * 0.35);
+    const rays = 12;
+    for (let i = 0; i < rays; i++) {
+      const a = (i / rays) * Math.PI * 2;
+      const grad = ctx.createRadialGradient(0, 0, g.r * 0.6, 0, 0, R);
+      grad.addColorStop(0, alpha(col, 0.32 * p));
+      grad.addColorStop(1, alpha(col, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, R, a - 0.09, a + 0.09);
+      ctx.closePath();
+      ctx.fill();
+    }
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, g.r * 2.4);
+    glow.addColorStop(0, alpha(col, 0.35 * p));
+    glow.addColorStop(1, alpha(col, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, g.r * 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** Burst of sparks when the ball lands. */
+  private drawSparks(g: Geometry, cy: number): void {
+    const t = (performance.now() - this.revealAt) / 900;
+    if (t >= 1) return;
+    const { ctx } = this;
+    const cx = this.W / 2;
+    const ease = 1 - Math.pow(1 - t, 3);
+    for (const s of this.sparks) {
+      const d = g.r * (1.05 + ease * 1.5 * s.v);
+      ctx.globalAlpha = (1 - t) * 0.95;
+      ctx.fillStyle = s.c;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(s.a) * d, cy + Math.sin(s.a) * d, s.s * (1 - t * 0.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Speed streak behind a ball while the strip is moving fast. */
+  private drawTrail(b: Ball, cx: number, cy: number, r: number): void {
+    const { ctx } = this;
+    const len = Math.min(r * 2.6, this.speed * 5);
+    const side = -this.dir; // trail points back where the ball came from
+    const col = GROUP_COLOR[letterOf(b.ball)];
+    const x2 = cx + side * len;
+    const grad = ctx.createLinearGradient(cx, 0, x2, 0);
+    grad.addColorStop(0, alpha(col, 0.45));
+    grad.addColorStop(1, alpha(col, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(cx + (side * len) / 2, cy, len / 2 + r * 0.4, r * 0.82, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private ballY(g: Geometry): number {
@@ -375,7 +527,8 @@ export class Rail {
     ctx.save();
     ctx.translate(cx, cy);
     if (hit) {
-      ctx.scale(HIT_SCALE, HIT_SCALE);
+      const hs = this.hitScale();
+      ctx.scale(hs, hs);
       ctx.shadowColor = this.hitColor;
       ctx.shadowBlur = 26;
     } else {
@@ -432,6 +585,14 @@ export class Rail {
     const tx = cx - tw / 2;
     const ty = cy + r * (hit ? HIT_SCALE : 1) + 9;
     ctx.save();
+    if (hit && this.revealAt) {
+      // Pop the landed multiplier tag along with the ball.
+      const k = 1 + (this.hitScale() - HIT_SCALE) * 1.4;
+      ctx.translate(cx, ty + th / 2);
+      ctx.scale(k, k);
+      ctx.translate(-cx, -(ty + th / 2));
+    }
+    ctx.save();
     this.pill(tx, ty, tw, th);
     if (hit) {
       const fill = ctx.createLinearGradient(0, ty, 0, ty + th);
@@ -468,10 +629,10 @@ export class Rail {
     ctx.fillStyle = ink;
     ctx.font = fNum;
     ctx.fillText(num, sx, ty + th / 2 + 1);
-    ctx.globalAlpha = 0.75;
+    ctx.globalAlpha *= 0.75;
     ctx.font = fX;
     ctx.fillText('×', sx + nw + 1, ty + th / 2 + 1.5);
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   private drawHistory(g: Geometry): void {

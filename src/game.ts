@@ -1,7 +1,7 @@
 import { all, byId, one, prefersReducedMotion, sleep } from './dom';
 import { MAX_MULTIPLIER, roll } from './fair';
-import { GROUP_NAME, fmt, fmtM, isLetter, letterOf, money } from './format';
-import { C, LAND, Rail, START } from './rail';
+import { GROUP_NAME, fmt, fmtM, isLetter, letterOf, money, tier } from './format';
+import { C, GROUP_COLOR, LAND, Rail, START } from './rail';
 import type { Sound } from './sound';
 import { START_BALANCE, loadState, saveState } from './state';
 import type { Bet, GameState, Letter, Mode, Phase } from './types';
@@ -156,7 +156,11 @@ export class Game {
         <span class="rc-icon" aria-hidden="true">${win ? '✓' : '✕'}</span>
         <span class="rc-body">
           <span class="rc-title">${win ? 'You won' : 'You lost'}</span>
-          <span class="rc-sub">Your KES ${fmt(live.bet)} on ${live.pick} (${GROUP_NAME[live.pick]}) · ball was ${L}-${res.ball}${win ? ` · ${fmtM(res.mult)}× pays KES ${fmt(payout)}` : ''}</span>
+        </span>
+        <span class="rc-vs" aria-label="You picked ${GROUP_NAME[live.pick]}, drawn ${L}-${res.ball}">
+          <span class="vs-item"><small>You picked</small>${pickChip(live.pick)}</span>
+          <span class="vs-arrow" aria-hidden="true">${win ? '=' : '≠'}</span>
+          <span class="vs-item"><small>Drawn</small>${ballChip(res.ball, res.mult)}</span>
         </span>
         <span class="rc-amt">${win ? '+' : '−'}KES ${fmt(Math.abs(win ? net : live.bet))}</span>
       </div>`;
@@ -283,17 +287,23 @@ export class Game {
 
   private renderLog(): void {
     this.rail.draw();
-    this.el.log.replaceChildren(
-      ...this.state.bets.slice(0, 30).map((h) => {
-        const tr = document.createElement('tr');
+    const rows = this.state.bets.slice(0, 30);
+    if (!rows.length) {
+      this.el.log.innerHTML = '<div class="lg-empty">Your bets will show here after the first round.</div>';
+      return;
+    }
+    this.el.log.innerHTML = rows
+      .map((h) => {
         const p = h.profit;
-        tr.innerHTML =
-          `<td>${h.nonce}</td><td>${letterOf(h.ball)}-${h.ball}</td><td>${fmtM(h.mult)}×</td>` +
-          `<td>${h.pick} · ${GROUP_NAME[h.pick]}</td><td>${fmt(h.bet)}</td>` +
-          `<td class="${p >= 0 ? 'w' : 'l'}">${p >= 0 ? '+' : '−'}${fmt(Math.abs(p))}</td>`;
-        return tr;
-      }),
-    );
+        return `<div class="lg-row ${h.win ? 'win' : 'lose'}">
+          <span class="lg-rd">#${h.nonce + 1}</span>
+          <span class="lg-drawn">${ballChip(h.ball, h.mult)}</span>
+          <span class="lg-pick"><small>Pick</small>${pickChip(h.pick)}</span>
+          <span class="lg-bet"><small>Bet</small>KES ${fmt(h.bet)}</span>
+          <span class="lg-res"><em>${h.win ? 'WIN' : 'LOSS'}</em>${p >= 0 ? '+' : '−'}KES ${fmt(Math.abs(p))}</span>
+        </div>`;
+      })
+      .join('');
   }
 
   private refreshControls(): void {
@@ -304,7 +314,23 @@ export class Game {
     this.setPlayLabel();
   }
 
+  /** Show the player's pick on the rail while their bet is waiting or rolling. */
+  private renderYourPick(): void {
+    const el = document.getElementById('yourPick');
+    if (!el) return;
+    const b = this.live ?? this.queued;
+    if (!b) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.style.top = `${this.rail.geo().hist + 10}px`;
+    el.style.setProperty('--c', GROUP_COLOR[b.pick]);
+    el.innerHTML = `<small>Your pick</small><b>${b.pick}</b><span>${GROUP_NAME[b.pick]} · KES ${fmt(b.bet)}</span>`;
+  }
+
   private setPlayLabel(): void {
+    this.renderYourPick();
     const { play, playMain, playSub } = this.el;
     const { bet } = this.readBet();
     const sub = bet > 0 ? `${this.pick} · win up to KES ${fmt(bet * MAX_MULTIPLIER)}` : 'Set a bet';
@@ -410,4 +436,15 @@ export class Game {
       if (this.mode === 'manual') this.onPlay();
     });
   }
+}
+
+/** The player's choice: a colour group, drawn as a flat outlined tag (never a ball). */
+function pickChip(L: Letter): string {
+  return `<span class="pick-chip" style="--c:${GROUP_COLOR[L]}"><i>${L}</i>${GROUP_NAME[L]}</span>`;
+}
+
+/** A drawn ball: glossy ball with its number, plus the multiplier it carried. */
+function ballChip(ball: number, mult: number): string {
+  const L = letterOf(ball);
+  return `<span class="ball-chip" style="--c:${GROUP_COLOR[L]}"><b>${ball}</b><span class="bc-l">${L}-${ball}</span><span class="m-${tier(mult)}">${fmtM(mult)}×</span></span>`;
 }
