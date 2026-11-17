@@ -18,7 +18,7 @@ Multiplier odds: 1.55× 40%, 3.2× 25%, 5× 15%, 8× 10%, 12× 6%, 25× 3%, 50×
 
 - Rounds run automatically: 5 s betting window, slide, 2 s result.
 - Manual and Auto betting (10 / 25 / 50 / 100 rounds).
-- Bet input with − / + and quick amounts (20, 50, 100, 500, 1K).
+- Bet input (default KES 10, any amount up to your balance) with − / + and quick amounts (10, 20, 50, 100, 200).
 - Canvas-drawn rail with a row of previous results, plus a round log.
 - Sounds made with the Web Audio API (no audio files), with a settings menu: on/off, volume, and separate switches for rolling ticks, countdown beeps, win/loss sounds and button clicks.
 - A 7-step How to play tour that opens on the first visit and again from the **?** button.
