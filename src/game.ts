@@ -1,7 +1,7 @@
 import { all, byId, one, prefersReducedMotion, sleep } from './dom';
 import { MAX_MULTIPLIER, roll } from './fair';
 import { GROUP_NAME, fmt, fmtM, isLetter, letterOf, money } from './format';
-import { C, GROUP_COLOR, LAND, Rail, START } from './rail';
+import { C, LAND, Rail, START } from './rail';
 import type { Sound } from './sound';
 import { START_BALANCE, loadState, saveState } from './state';
 import type { Bet, GameState, Letter, Mode, Phase } from './types';
@@ -281,44 +281,8 @@ export class Game {
     this.refreshControls();
   }
 
-  /** Colour trends: how often each group came up recently and when it was last seen. */
-  private renderTrends(): void {
-    const box = document.getElementById('trends');
-    if (!box) return;
-    const hist = this.state.history.slice(0, 30);
-    const n = hist.length;
-    const counts = { B: 0, I: 0, N: 0, G: 0, O: 0 } as Record<Letter, number>;
-    const seen = {} as Record<Letter, number>;
-    hist.forEach((h, i) => {
-      const L = letterOf(h.ball);
-      counts[L]++;
-      if (seen[L] === undefined) seen[L] = i;
-    });
-    const max = Math.max(1, ...Object.values(counts));
-    box.innerHTML = (['B', 'I', 'N', 'G', 'O'] as const)
-      .map((L) => {
-        const c = counts[L];
-        const pct = n ? Math.round((c / n) * 100) : 0;
-        const ago = seen[L] === undefined ? (n ? `Not in last ${n}` : '—') : seen[L] === 0 ? 'Last ball' : `${seen[L]} ball${seen[L] === 1 ? '' : 's'} ago`;
-        const hot = n >= 10 && c === max && c > 0 ? '<em class="hot">Hot</em>' : '';
-        return `<div class="tr-row" style="--c:${GROUP_COLOR[L]}"><span class="tr-ball">${L}</span><span class="tr-name">${GROUP_NAME[L]}${hot}</span>
-          <span class="tr-bar"><i style="width:${(c / max) * 100}%"></i></span><span class="tr-pct">${pct}%</span><span class="tr-ago">${ago}</span></div>`;
-      })
-      .join('');
-    const you = document.getElementById('youStats');
-    if (you) {
-      const bets = this.state.bets;
-      const wins = bets.filter((b) => b.win).length;
-      const net = money(bets.reduce((a, b) => a + b.profit, 0));
-      you.innerHTML = bets.length
-        ? `<span>Your bets <b>${bets.length}</b></span><span>Won <b>${wins}</b></span><span>Net <b class="${net >= 0 ? 'w' : 'l'}">${net >= 0 ? '+' : '−'}KES ${fmt(Math.abs(net))}</b></span>`
-        : '<span>Place a bet to see your stats</span>';
-    }
-  }
-
   private renderLog(): void {
     this.rail.draw();
-    this.renderTrends();
     this.el.log.replaceChildren(
       ...this.state.bets.slice(0, 30).map((h) => {
         const tr = document.createElement('tr');
