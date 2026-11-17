@@ -1,7 +1,7 @@
 import { all, byId, one, prefersReducedMotion, sleep } from './dom';
 import { MAX_MULTIPLIER, roll } from './fair';
 import { GROUP_NAME, fmt, fmtM, isLetter, letterOf, money } from './format';
-import { C, GROUP_COLOR, LAND, Rail, START } from './rail';
+import { C, LAND, Rail, START } from './rail';
 import type { Sound } from './sound';
 import { START_BALANCE, loadState, saveState } from './state';
 import type { Bet, GameState, Letter, Mode, Phase } from './types';
@@ -82,12 +82,7 @@ export class Game {
     this.setPlayLabel();
     const end = performance.now() + BET_WINDOW_MS;
     this.setPhaseBar('Place your bets', BET_WINDOW_MS, 'bet');
-    const lo = this.lastOutcome;
-    this.lastOutcome = null;
-    this.el.callout.innerHTML =
-      (lo ? `<span class="last-pill ${lo.win ? 'win' : 'lose'}">Last bet: ${lo.win ? 'Won' : 'Lost'} ${lo.text}</span>` : '') +
-      '<span class="hint" id="cd"></span>';
-    const cd = byId('cd');
+    this.el.callout.innerHTML = '<span class="sr-only">Bets open</span>';
     let lastSec = Infinity;
     // Big countdown dial over the rail (the canvas band below "Previous").
     const ov = byId('cdown');
@@ -112,10 +107,6 @@ export class Game {
       arc.style.strokeDashoffset = String(100 - (left / (BET_WINDOW_MS / 1000)) * 100);
       arc.classList.toggle('hot', sec <= 3);
       lastSec = sec;
-      const q = this.queued;
-      cd.textContent =
-        `Bets open` +
-        (q ? ` · you're in for KES ${fmt(q.bet)} on ${q.pick} (${GROUP_NAME[q.pick]})` : '');
       await sleep(50);
     }
     ov.classList.add('out');
@@ -141,18 +132,18 @@ export class Game {
     this.rail.setMarker(C.brass);
     this.setPhaseBar('Rolling', 0, 'roll');
     const live = this.live;
-    this.el.callout.innerHTML = `<span class="hint">${
-      live ? `Rolling · your KES ${fmt(live.bet)} on ${live.pick} (${GROUP_NAME[live.pick]})` : 'Rolling · no bet from you this round'
-    }</span>`;
+    this.el.callout.innerHTML = '<span class="sr-only">Rolling</span>';
     await this.rail.slide(from, to, prefersReducedMotion() ? 150 : SLIDE_MS);
     await this.rail.settle(this.rail.offsetFor(LAND), prefersReducedMotion() ? 0 : 420);
 
     // Settle the round.
     this.phase = 'result';
     const L = letterOf(res.ball);
-    let resultHtml = '<span class="hint">No bet this round</span>';
+    let resultHtml = '';
     let win = false;
     this.sound.play('land');
+    // Bingo-hall call: letter, number, then the multiplier.
+    setTimeout(() => this.sound.call(`${L}, ${res.ball}. ${fmtM(res.mult)} times.`), 250);
     if (live) {
       win = L === live.pick;
       const payout = win ? money(live.bet * res.mult) : 0;
@@ -169,7 +160,6 @@ export class Game {
         </span>
         <span class="rc-amt">${win ? '+' : '−'}KES ${fmt(Math.abs(win ? net : live.bet))}</span>
       </div>`;
-      this.lastOutcome = { win, text: win ? `+KES ${fmt(net)}` : `−KES ${fmt(live.bet)}` };
       this.flashWallet(win, win ? `+${fmt(payout)}` : '');
       this.flashStage(win);
       if (live.auto && this.autoLeft > 0) this.autoLeft--;
@@ -181,7 +171,7 @@ export class Game {
     this.rail.markHit(LAND, live ? (win ? C.win : C.miss) : C.brass);
     this.el.callout.innerHTML = live
       ? resultHtml
-      : `<span class="big" style="color:${GROUP_COLOR[L]}">${L}-${res.ball} · ${fmtM(res.mult)}×</span>` + resultHtml;
+      : `<span class="sr-only">Ball ${L}-${res.ball}, ${fmtM(res.mult)}×</span>`;
     this.renderWallet();
     this.renderLog();
     saveState(s);
@@ -255,8 +245,6 @@ export class Game {
   }
 
   // ---------- rendering ----------
-
-  private lastOutcome: { win: boolean; text: string } | null = null;
 
   /** Float the balance change next to the wallet and tint it green or red. */
   private flashWallet(win: boolean, text: string): void {

@@ -10,9 +10,11 @@ export interface SoundConfig {
   count: boolean;
   result: boolean;
   ui: boolean;
+  /** Spoken caller announcing each ball. */
+  caller: boolean;
 }
 
-const DEFAULTS: SoundConfig = { on: true, vol: 0.6, ticks: true, count: true, result: true, ui: true };
+const DEFAULTS: SoundConfig = { on: true, vol: 0.6, ticks: true, count: true, result: true, ui: true, caller: true };
 
 type AudioCtor = typeof AudioContext;
 
@@ -32,6 +34,50 @@ export class Sound {
     // Browsers only allow audio after the viewer interacts with the page.
     addEventListener('pointerdown', () => this.ensure(), { once: true });
     addEventListener('keydown', () => this.ensure(), { once: true });
+    window.speechSynthesis?.addEventListener?.('voiceschanged', () => this.pickVoice());
+    this.pickVoice();
+  }
+
+  private voice: SpeechSynthesisVoice | null = null;
+
+  /** Pick a male English voice for the caller, if the device has one. */
+  private pickVoice(): void {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    const all = synth.getVoices();
+    if (!all.length) return;
+    const en = all.filter((v) => /^en/i.test(v.lang));
+    const pool = en.length ? en : all;
+    const male =
+      /\b(male|man)\b|daniel|david|alex\b|fred|george|arthur|guy|ryan|thomas|mark|james|aaron|rishi|oliver|gordon|lee|tom\b|reed|eddy|rocko|ralph/i;
+    const notFemale = (v: SpeechSynthesisVoice) => !/female|woman|zira|susan|samantha|victoria|karen|moira|tessa|fiona|hazel|libby|sonia|aria|jenny|serena|kate|catherine/i.test(v.name);
+    this.voice =
+      pool.find((v) => male.test(v.name) && notFemale(v) && /en-(GB|KE|ZA|AU)/i.test(v.lang)) ??
+      pool.find((v) => male.test(v.name) && notFemale(v)) ??
+      pool.find(notFemale) ??
+      pool[0] ??
+      null;
+  }
+
+  /** Announce text with the caller voice (deep, steady, bingo-hall style). */
+  call(text: string): void {
+    const synth = window.speechSynthesis;
+    if (!synth || !this.cfg.on || !this.cfg.caller || this.cfg.vol === 0) return;
+    try {
+      if (!this.voice) this.pickVoice();
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      if (this.voice) {
+        u.voice = this.voice;
+        u.lang = this.voice.lang;
+      } else u.lang = 'en-GB';
+      u.pitch = 0.75;
+      u.rate = 0.92;
+      u.volume = Math.min(1, this.cfg.vol * 1.4);
+      synth.speak(u);
+    } catch {
+      /* speech unavailable */
+    }
   }
 
   /** Create or resume the audio context. Safe to call often. */

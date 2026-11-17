@@ -345,3 +345,22 @@ header{min-width:0}
 
 /* Phase bar removed at request; the countdown dial shows timing now */
 .stage .phase{display:none}
+/* Status line removed: the callout only carries the win/lose card, floating over the bottom of the rail */
+.stage{padding-bottom:0}
+.callout{position:absolute; left:0; right:0; bottom:10px; z-index:5; min-height:0; padding:0 12px; pointer-events:none}
+.callout:empty{display:none}
+.rcard{background-color:rgba(6,16,16,.92); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+/* Result banner sits over the Previous row so the landed ball stays in view */
+.callout{top:5px; bottom:auto; display:flex; justify-content:center}
+.rcard{width:auto; max-width:100%; padding:4px 14px 4px 4px; border-radius:999px; gap:10px}
+.rc-icon{width:30px; height:30px; font-size:15px}
+.rc-body{flex-direction:row; align-items:baseline; gap:10px; min-width:0}
+.rc-title{font-size:16px}
+.rc-sub{font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rc-amt{font-size:15px}
+@media (max-width:560px){ .rc-sub{display:none} .rcard{padding-right:12px} .rc-title{font-size:15px} .rc-icon{width:28px; height:28px} }
+.rcard.win{background:linear-gradient(135deg, rgba(61,220,132,.3), rgba(61,220,132,.1)), #071413}
+.rcard.lose{background:linear-gradient(135deg, rgba(255,107,94,.3), rgba(255,107,94,.1)), #071413}
+/* Payout float sits beside the wallet so the result banner never covers it */
+.wdelta{top:50%; right:calc(100% + 8px); margin-top:-12px}

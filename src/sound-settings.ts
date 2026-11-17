@@ -1,12 +1,13 @@
 import { byId } from './dom';
 import type { Sound, SoundConfig } from './sound';
 
-type Toggle = 'ticks' | 'count' | 'result' | 'ui';
+type Toggle = 'ticks' | 'count' | 'result' | 'ui' | 'caller';
 const TOGGLES: ReadonlyArray<readonly [id: string, key: Toggle]> = [
   ['sTicks', 'ticks'],
   ['sCount', 'count'],
   ['sResult', 'result'],
   ['sUi', 'ui'],
+  ['sCaller', 'caller'],
 ];
 
 /** Wire the sound settings popover in the header. Returns a function that closes it. */
@@ -73,6 +74,7 @@ export function mountSoundSettings(sound: Sound): () => void {
   byId('sTest').addEventListener('click', () => {
     sound.ensure();
     sound.play('win');
+    sound.call('B, thirteen. Five times.');
   });
 
   sync();
