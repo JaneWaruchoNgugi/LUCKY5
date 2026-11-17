@@ -89,17 +89,39 @@ export class Game {
       '<span class="hint" id="cd"></span>';
     const cd = byId('cd');
     let lastSec = Infinity;
+    // Big countdown dial over the rail (the canvas band below "Previous").
+    const ov = byId('cdown');
+    const num = byId('cdNum');
+    const arc = byId('cdArc');
+    const g = this.rail.geo();
+    ov.style.top = `${g.hist}px`;
+    ov.style.height = `${g.railH}px`;
+    ov.hidden = false;
+    ov.classList.remove('out');
     while (performance.now() < end) {
       const left = Math.max(0, (end - performance.now()) / 1000);
       const sec = Math.ceil(left);
       if (sec <= 3 && sec > 0 && sec < lastSec) this.sound.play('count');
+      if (sec !== lastSec && sec > 0) {
+        num.textContent = String(sec);
+        num.classList.toggle('hot', sec <= 3);
+        num.classList.remove('bump');
+        void num.offsetWidth;
+        num.classList.add('bump');
+      }
+      arc.style.strokeDashoffset = String(100 - (left / (BET_WINDOW_MS / 1000)) * 100);
+      arc.classList.toggle('hot', sec <= 3);
       lastSec = sec;
       const q = this.queued;
       cd.textContent =
-        `Bets open · next ball in ${left.toFixed(1)}s` +
+        `Bets open` +
         (q ? ` · you're in for KES ${fmt(q.bet)} on ${q.pick} (${GROUP_NAME[q.pick]})` : '');
-      await sleep(100);
+      await sleep(50);
     }
+    ov.classList.add('out');
+    setTimeout(() => {
+      if (ov.classList.contains('out')) ov.hidden = true;
+    }, 250);
   }
 
   private async slide(): Promise<void> {
