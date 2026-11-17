@@ -74,7 +74,7 @@ export function mountSoundSettings(sound: Sound): () => void {
   byId('sTest').addEventListener('click', () => {
     sound.ensure();
     sound.play('win');
-    sound.call('B, thirteen. Five times.');
+    sound.call('B, thirteen.');
   });
 
   sync();

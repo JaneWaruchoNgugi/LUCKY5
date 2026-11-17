@@ -142,8 +142,8 @@ export class Game {
     let resultHtml = '';
     let win = false;
     this.sound.play('land');
-    // Bingo-hall call: letter, number, then the multiplier.
-    setTimeout(() => this.sound.call(`${L}, ${res.ball}. ${fmtM(res.mult)} times.`), 250);
+    // Bingo-hall call: letter and number only.
+    setTimeout(() => this.sound.call(`${L}, ${res.ball}.`), 250);
     if (live) {
       win = L === live.pick;
       const payout = win ? money(live.bet * res.mult) : 0;
